@@ -11,5 +11,5 @@ public class ColumnDefinitionsModel
     public int Id { get; set; }
     public int TableDefinitionsId { get; set; }
     public int DataTypesId { get; set; }
-    public string ColumnName { get; set; }
+    public string ColumnName { get; set; } = "";
 }
