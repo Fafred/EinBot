@@ -6,6 +6,6 @@
 	@Data NVARCHAR(50)
 AS
 BEGIN
-	INSERT INTO [dbo].[Cells] ([TableDefinitionsId], [ColumnDefinitionsId], [RowNum], [Data], [Key])
+	INSERT INTO [dbo].[Cells] ([TableDefinitionsId], [ColumnDefinitionsId], [RowNum], [Data], [RowKey])
 	VALUES (@TableDefinitionsId, @ColumnDefinitionsId, @RowNum, @Data, @Key);
 END

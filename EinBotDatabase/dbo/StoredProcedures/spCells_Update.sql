@@ -8,6 +8,6 @@
 AS
 BEGIN
 	UPDATE [dbo].[Cells]
-	SET TableDefinitionsId = @TableDefinitionsId, ColumnDefinitionsId = @ColumnDefinitionsId, RowNum = @RowNum, [Key] = @Key, [Data] = @Data
+	SET TableDefinitionsId = @TableDefinitionsId, ColumnDefinitionsId = @ColumnDefinitionsId, RowNum = @RowNum, [RowKey] = @Key, [Data] = @Data
 	WHERE Id = @Id;
 END

@@ -6,4 +6,4 @@
 AS
 	UPDATE [dbo].[Cells]
 	SET [Data] = @Data
-	WHERE TableDefinitionsId = @TableDefinitionsId AND ColumnDefinitionsId = @ColumnDefinitionsId AND [Key] = @Key
+	WHERE TableDefinitionsId = @TableDefinitionsId AND ColumnDefinitionsId = @ColumnDefinitionsId AND [RowKey] = @Key
