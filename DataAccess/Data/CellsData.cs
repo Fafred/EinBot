@@ -2,7 +2,7 @@
 
 using DataAccess.DbAccess;
 
-public class CellsData
+public class CellsData : ICellsData
 {
     private readonly ISqlDataAccess _db;
 
@@ -10,6 +10,4 @@ public class CellsData
     {
         _db = db;
     }
-
-
 }
