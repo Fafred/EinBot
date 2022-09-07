@@ -8,9 +8,9 @@ using System.Threading.Tasks;
 
 public class ColumnDefinitionsData : IColumnDefinitionsData
 {
-    private readonly ISqlDataAccess _db;
+    private readonly IRelationalDataAccess _db;
 
-    public ColumnDefinitionsData(ISqlDataAccess db)
+    public ColumnDefinitionsData(IRelationalDataAccess db)
     {
         _db = db;
     }

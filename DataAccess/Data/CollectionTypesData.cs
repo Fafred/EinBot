@@ -5,9 +5,9 @@ using DataAccess.Models;
 
 public class CollectionTypesData : ICollectionTypesData
 {
-    private readonly ISqlDataAccess _db;
+    private readonly IRelationalDataAccess _db;
 
-    public CollectionTypesData(ISqlDataAccess db)
+    public CollectionTypesData(IRelationalDataAccess db)
     {
         _db = db;
     }

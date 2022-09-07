@@ -5,9 +5,9 @@ using DataAccess.Models;
 
 public class TypesData : ITypesData
 {
-    private readonly ISqlDataAccess _db;
+    private readonly IRelationalDataAccess _db;
 
-    public TypesData(ISqlDataAccess db)
+    public TypesData(IRelationalDataAccess db)
     {
         _db = db;
     }

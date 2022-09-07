@@ -12,7 +12,7 @@ public static partial class HostSetup
     public static IServiceCollection SetupDataAccess(this IServiceCollection serviceCollection)
     {
         serviceCollection
-            .AddSingleton<ISqlDataAccess, SqlDataAccess>()
+            .AddSingleton<IRelationalDataAccess, SqlDataAccess>()
             .AddTransient<ITypesData, TypesData>()
             .AddTransient<IColumnDefinitionsData, ColumnDefinitionsData>()
             .AddTransient<ICollectionTypesData, CollectionTypesData>()

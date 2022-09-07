@@ -7,7 +7,7 @@
     public interface ITableDefinitionsData
     {
         Task DeleteTableDefinition(int id);
-        Task<IEnumerable<TableDefinitionsModel>> GeTableDefinitions();
+        Task<IEnumerable<TableDefinitionsModel>> GetTableDefinitions();
         Task<TableDefinitionsModel?> GetTableDefinition(int id);
         Task InsertTableDefinition(TableDefinitionsModel tableDefinition);
         Task UpdateTableDefinition(TableDefinitionsModel tableDefinition);

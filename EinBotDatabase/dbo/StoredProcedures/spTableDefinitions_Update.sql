@@ -2,7 +2,7 @@
 	@Id INT,
 	@TableName NVARCHAR(50),
 	@CollectionTypesId INT,
-	@RoleId INT
+	@RoleId NVARCHAR(50)
 AS
 BEGIN
 	UPDATE [dbo].[TableDefinitions]

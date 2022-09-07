@@ -1,7 +1,7 @@
 ﻿CREATE PROCEDURE [dbo].[spTableDefinitions_Insert]
 	@TableName nvarchar(50),
 	@CollectionTypeId int,
-	@RoleId int = NULL
+	@RoleId nvarchar(50)
 AS
 BEGIN
 	INSERT INTO [dbo].[TableDefinitions] ([TableName], [CollectionTypesId], [RoleId])

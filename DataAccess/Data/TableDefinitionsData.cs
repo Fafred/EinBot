@@ -8,15 +8,15 @@ using System.Threading.Tasks;
 
 public class TableDefinitionsData: ITableDefinitionsData
 {
-    private readonly ISqlDataAccess _db;
+    private readonly IRelationalDataAccess _db;
 
-    public TableDefinitionsData(ISqlDataAccess db)
+    public TableDefinitionsData(IRelationalDataAccess db)
     {
         _db = db;
     }
 
 
-    public Task<IEnumerable<TableDefinitionsModel>> GeTableDefinitions() =>
+    public Task<IEnumerable<TableDefinitionsModel>> GetTableDefinitions() =>
         _db.LoadData<TableDefinitionsModel, dynamic>(storedProcedure: "dbo.spTableDefinitions_GetAll", new { });
 
     public async Task<TableDefinitionsModel?> GetTableDefinition(int id)
