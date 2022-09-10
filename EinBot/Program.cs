@@ -32,7 +32,7 @@ public partial class Program
 
         foreach(var columnName in table.ColumnDataTypes.Keys)
         {
-            Console.WriteLine($"{columnName} : {table.ColumnDataTypes[columnName]}\n+");
+            Console.WriteLine($"{columnName} : {table.ColumnDataTypes[columnName]}\n");
         }
 
         StringBuilder builder = new StringBuilder();

@@ -1,23 +1,37 @@
 ﻿namespace EinBotDB.DataAccess;
 
 using EinBotDB.Context;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 
-public class EinDataAccess
+public partial class EinDataAccess
 {
-    private EinDataContextFactory _factory;
+    private readonly IDbContextFactory<EinDataContext> _factory;
 
-    public EinDataAccess(EinDataContextFactory factory)
+    public EinDataAccess(IDbContextFactory<EinDataContext> factory)
     {
         _factory = factory;
     }
 
     public EinTable GetEinTable(string tableName)
     {
-        return new EinTable(tableName, _factory.CreateDbContext(new string[] { }));
+        using var context = _factory.CreateDbContext();
+
+        return new EinTable(tableName, context);
     }
+
+    public EinTable GetEinTable(int tableId)
+    {
+        using var context = _factory.CreateDbContext();
+
+        return new EinTable(tableId, context);
+    }
+
+    public EinTable GetEinTable(ulong roleId)
+    {
+        using var context = _factory.CreateDbContext();
+
+        return new EinTable(roleId, context);
+    }
+
+
 }

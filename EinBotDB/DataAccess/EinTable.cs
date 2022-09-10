@@ -9,10 +9,9 @@ using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Text;
 using System.Threading.Tasks;
 
-public class EinTable
+public partial class EinTable
 {
     private Dictionary<string, Type> _columnTypes = new Dictionary<string, Type>();
 
@@ -30,20 +29,43 @@ public class EinTable
 
     public ImmutableDictionary<string, DataTypesEnum> ColumnDataTypes;
 
-    public ImmutableList<EinRow> Rows { get; }
+    public ImmutableList<EinRow> Rows { get; private set; }
 
     internal EinTable(string tableName, EinDataContext context)
+    {
+        TableDefinitionsModel? tableDefinition = context.TableDefinitions.FirstOrDefault(x =>
+            x.Name == tableName);
+
+        if (tableDefinition is null) throw new TableDoesNotExistException(tableName);
+        LoadTable(tableDefinition.Id, context);
+    }
+
+    internal EinTable(ulong roleId, EinDataContext context)
+    {
+        TableDefinitionsModel? tableDefinition = context.TableDefinitions.FirstOrDefault(x =>
+            x.RoleId == roleId);
+
+        if (tableDefinition is null) throw new TableDoesNotExistException(roleId);
+        LoadTable(tableDefinition.Id, context);
+    }
+
+    internal EinTable(int tableId, EinDataContext context)
+    {
+        LoadTable(tableId, context);
+    }
+
+    private void LoadTable(int tableId, EinDataContext context)
     {
         // First grab the table definition.  This will tell us the table's name and collectin type.
         TableDefinitionsModel? table;
 
         table = context.TableDefinitions.FirstOrDefault(x =>
-            x.Name == tableName);
+            x.Id == tableId);
 
-        if (table is null) throw new TableDoesNotExistException(tableName);
+        if (table is null) throw new TableDoesNotExistException(tableId);
 
-        _tableId = table.Id;
-        _tableName = tableName;
+        _tableId = tableId;
+        _tableName = table.Name;
         _collectionTypeId = table.CollectionTypeId;
 
         CollectionTypesModel? collectionType;
@@ -86,115 +108,5 @@ public class EinTable
         }
 
         Rows = einRowsList.ToImmutableList();
-    }
-
-    public class EinRow
-    {
-        private string _string = "";
-
-        public EinTable Table { get; }
-        public ImmutableDictionary<string, DataTypesEnum> ColumnDataTypes { get; }
-
-        public int Id { get; set; }
-        public string? Key { get; set; }
-
-        public Dictionary<string, string?> Columns = new Dictionary<string, string?>();
-        public Dictionary<string, List<string?>> ListColumns = new Dictionary<string, List<string?>>();
-
-        internal EinRow(EinTable table, ImmutableDictionary<string, DataTypesEnum> columnDataTypes, ICollection<CellsModel> cells)
-        {
-            Table = table;
-            ColumnDataTypes = columnDataTypes;
-
-            var firstCell = cells.First();
-
-            if (firstCell is null) return;
-
-            Id = firstCell.RowNum;
-            Key = firstCell.RowKey;
-
-            foreach (CellsModel cell in cells)
-            {
-                string columnName = cell.ColumnDefinitions.Name;
-
-                switch (ColumnDataTypes[columnName])
-                {
-                    case DataTypesEnum.ListInt:
-                    case DataTypesEnum.ListDecimal:
-                    case DataTypesEnum.ListText:
-                    case DataTypesEnum.ListUserId:
-                    case DataTypesEnum.ListGuildId:
-                    case DataTypesEnum.ListChannelId:
-                        if (!ListColumns.ContainsKey(columnName))
-                        {
-                            ListColumns.Add(columnName, new List<string?>());
-                        }
-                        ListColumns[columnName].Add(cell.Data);
-                        break;
-                    default:
-                        Columns[columnName] = cell.Data;
-                        break;
-                }
-
-            }
-        }
-
-        public bool IsColumnList(string columnName)
-        {
-            return ListColumns.ContainsKey(columnName);
-        }
-
-        public (DataTypesEnum DataType, bool IsColumnList, dynamic? Data) this[string columnName]
-        {
-            get
-            {
-                if (!ColumnDataTypes.ContainsKey(columnName)) throw new ColumnDoesNotExistException(Table.Name, columnName);
-
-                if (Columns.ContainsKey(columnName)) return (ColumnDataTypes[columnName], false, Columns[columnName]);
-
-                return (ColumnDataTypes[columnName], true, ListColumns[columnName]);
-            }
-        }
-
-        public override string ToString()
-        {
-            if (!string.IsNullOrEmpty(_string)) return _string;
-
-            StringBuilder stringBuilder = new StringBuilder();
-
-            stringBuilder.Append($"[{Id}] [Key: {Key ?? "NULL"}] ");
-
-            foreach(string key in ColumnDataTypes.Keys)
-            {
-                stringBuilder.Append($"[{key}: ");
-
-                if (Columns.ContainsKey(key))
-                {
-                    stringBuilder.Append(Columns[key] ?? "NULL");
-                    stringBuilder.Append("] ");
-                } else if (ListColumns.ContainsKey(key))
-                {
-                    stringBuilder.Append('(');
-
-                    foreach(var str in ListColumns[key])
-                    {
-                        stringBuilder.Append(str ?? "NULL");
-                        stringBuilder.Append(", ");
-                    }
-                    stringBuilder.Append(")] ");
-                } else
-                {
-                    stringBuilder.Append("NULL] ");
-                }
-            }
-
-            _string = stringBuilder.ToString();
-            return _string;
-        }
-    }
-
-    private void LoadTable(string tableName, EinDataContext context)
-    {
-
     }
 }
