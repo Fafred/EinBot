@@ -9,12 +9,43 @@ using EinBot.HostSetup;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+/// 
+/// 
+using EinBotDB.Context;
+using EinBotDB.Exceptions;
+using EinBotDB.DataAccess;
+using System.Text;
 
 public partial class Program
 {
     public static IServiceProvider ServiceProvider { get; private set; }
 
-    public static Task Main() => new Program().MainAsync();
+    public static Task Main() => new Program().Testing();
+
+    public async Task Testing()
+    {
+        var fact = new EinDataContextFactory();
+        var context = fact.CreateDbContext(new string[] { });
+        EinDataAccess da = new EinDataAccess(fact);
+
+        EinTable table = da.GetEinTable("Test");
+
+        foreach(var columnName in table.ColumnDataTypes.Keys)
+        {
+            Console.WriteLine($"{columnName} : {table.ColumnDataTypes[columnName]}\n+");
+        }
+
+        StringBuilder builder = new StringBuilder();
+
+        foreach(var row in table.Rows)
+        {
+            builder.AppendLine(row.ToString());
+        }
+
+        Console.WriteLine(builder.ToString());
+    }
+
+
 
     public async Task MainAsync()
     {

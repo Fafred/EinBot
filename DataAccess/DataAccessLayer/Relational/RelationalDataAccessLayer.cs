@@ -13,10 +13,10 @@ public class RelationalDataAccessLayer
         _db = relationalDataAccess;
     }
 
-    public async Task<TableDefinitionsModel> CreateTableDefinition(
+    public async Task<TableDefinitionsModel?> CreateTableDefinition(
         string tableName,
         CollectionTypeEnum collectionType,
-        ulong? roleID)
+        string? roleID)
     {
         TableDefinitionsData tdb = new TableDefinitionsData(_db);
 
@@ -27,7 +27,8 @@ public class RelationalDataAccessLayer
             RoleId = roleID
         };
 
-        var colType = (int)collectionType;
+        await tdb.InsertTableDefinition(tableDefinition);
 
+        return tdb.GetTableDefinitionByName(tableName).Result;
     }
 }

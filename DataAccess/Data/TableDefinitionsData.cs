@@ -2,6 +2,7 @@
 
 using DataAccess.DbAccess;
 using DataAccess.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -28,6 +29,15 @@ public class TableDefinitionsData: ITableDefinitionsData
         return results.FirstOrDefault();
     }
 
+    public async Task<TableDefinitionsModel?> GetTableDefinitionByName(string tableName)
+    {
+        var results = await _db.LoadData<TableDefinitionsModel, dynamic>(
+            storedProcedure: "dbo.spTableDefinitions_GetByName",
+            new { TableName = tableName });
+
+        return results.FirstOrDefault();
+    }
+
     public Task InsertTableDefinition(TableDefinitionsModel tableDefinition) =>
         _db.SaveData(
             storedProcedure: "dbo.spTableDefinitions_Insert",
@@ -43,4 +53,5 @@ public class TableDefinitionsData: ITableDefinitionsData
 
     public Task DeleteTableDefinition(int id) =>
         _db.SaveData(storedProcedure: "dbo.spTableDefinitions_Delete", new { Id = id });
+
 }

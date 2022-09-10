@@ -1,8 +1,6 @@
-﻿CREATE PROCEDURE [dbo].[spTableDefinitions_Get]
-	@Id int
+﻿CREATE PROCEDURE [dbo].[spTableDefinitions_GetAll]
 AS
 BEGIN
 	SELECT *
-	FROM [TableDefinitions]
-	WHERE Id = @Id;
+	FROM [TableDefinitions];
 END
