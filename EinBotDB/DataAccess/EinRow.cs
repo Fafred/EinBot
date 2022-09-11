@@ -1,6 +1,5 @@
 ﻿namespace EinBotDB.DataAccess;
 
-using EinBotDB.Exceptions;
 using EinBotDB.Models;
 using System.Collections.Generic;
 using System.Collections.Immutable;

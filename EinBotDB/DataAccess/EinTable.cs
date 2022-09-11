@@ -1,7 +1,6 @@
 ﻿namespace EinBotDB.DataAccess;
 
 using EinBotDB.Context;
-using EinBotDB.Exceptions;
 using EinBotDB.Models;
 using System;
 using System.Collections.Generic;

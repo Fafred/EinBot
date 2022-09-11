@@ -12,9 +12,9 @@ using Microsoft.Extensions.Hosting;
 /// 
 /// 
 using EinBotDB.Context;
-using EinBotDB.Exceptions;
 using EinBotDB.DataAccess;
 using System.Text;
+using Microsoft.EntityFrameworkCore;
 
 public partial class Program
 {
@@ -24,25 +24,48 @@ public partial class Program
 
     public async Task Testing()
     {
-        var fact = new EinDataContextFactory();
-        var context = fact.CreateDbContext(new string[] { });
-        EinDataAccess da = new EinDataAccess(fact);
+        var configuration = new ConfigurationBuilder()
+            .SetBasePath(Directory.GetCurrentDirectory())
+            .AddJsonFile("appsettings.json")
+            .Build();
 
-        EinTable table = da.GetEinTable("Test");
+        using IHost host = Host.CreateDefaultBuilder()
+            .ConfigureServices((_, services) =>
+                services
+                    .AddDbContextFactory<EinDataContext>(options => options.UseSqlite(configuration.GetConnectionString("EinBotDb")))
+                    .AddSingleton<EinDataAccess>())
+            .Build();
 
-        foreach(var columnName in table.ColumnDataTypes.Keys)
+
+        ServiceProvider = host.Services;
+
+        var dal = ServiceProvider.GetRequiredService<EinDataAccess>();
+
+
+        Dictionary<string, string> columnsDataDict = new Dictionary<string, string>()
         {
-            Console.WriteLine($"{columnName} : {table.ColumnDataTypes[columnName]}\n");
-        }
+            {"WholeNumber", "100"},
+            {"TextField", "This is a new text field." },
+            {"ListOfStrings", "One element in a list." }
+        };
 
-        StringBuilder builder = new StringBuilder();
+        dal.CreateTable("GoldTable", CollectionTypesEnum.PerKey);
+        dal.CreateColumn(2, "Gold", DataTypesEnum.Int);
+
+        dal.AddRow(2, "SoAndSo", new Dictionary<string, string>() { { "Gold", "41" } });
+
+        var table = dal.GetEinTable(2);
 
         foreach(var row in table.Rows)
         {
-            builder.AppendLine(row.ToString());
+            Console.WriteLine(row);
         }
 
-        Console.WriteLine(builder.ToString());
+
+        Console.WriteLine("---");
+
+
+        Task.Delay(-1);
     }
 
 

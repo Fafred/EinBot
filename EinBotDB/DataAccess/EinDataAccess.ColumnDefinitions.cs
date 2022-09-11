@@ -2,9 +2,7 @@
 
 using System.Linq;
 using EinBotDB.Context;
-using EinBotDB.Exceptions;
 using EinBotDB.Models;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 
 public partial class EinDataAccess
 {
@@ -266,7 +264,7 @@ public partial class EinDataAccess
     {
         var context = _factory.CreateDbContext();
 
-        TableDefinitionsModel? tableDefinition = context.TableDefinitions.FirstOrDefault(table => table.Name.Equals(tableName);
+        TableDefinitionsModel? tableDefinition = context.TableDefinitions.FirstOrDefault(table => table.Name.Equals(tableName));
 
         if (tableDefinition is null) throw new TableDoesNotExistException(tableName);
 

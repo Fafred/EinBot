@@ -6,13 +6,13 @@ public static class StringExtensions
     {
         char[] charArr = str.ToCharArray();
         charArr = Array.FindAll<char>(charArr, (ch => (char.IsLetterOrDigit(ch) || ch.Equals('-'))));
-        return charArr.ToString();
+        return new string(charArr);
     }
 
     public static string ToAlphaNumeric(this string str)
     {
         char[] charArr = str.ToCharArray();
         charArr = Array.FindAll<char>(charArr, (ch => (char.IsLetterOrDigit(ch))));
-        return charArr.ToString();
+        return new string(charArr);
     }
 }
