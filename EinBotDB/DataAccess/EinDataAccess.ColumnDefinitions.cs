@@ -152,6 +152,63 @@ public partial class EinDataAccess
     }
 
     /// <summary>
+    /// Retrieves the columns of a table.
+    /// </summary>
+    /// <param name="tableId">id of table the columns are in.</param>
+    /// <returns>List of ColumnDefinitionsModel.</returns>
+    /// <exception cref="TableDoesNotExistException">If no table exists with the given id.</exception>
+    public List<ColumnDefinitionsModel> GetColumns(int tableId)
+    {
+        var context = _factory.CreateDbContext();
+
+        TableDefinitionsModel? tableDefinition = context.TableDefinitions.FirstOrDefault(table => table.Id == tableId);
+
+        if (tableDefinition is null) throw new TableDoesNotExistException(tableId);
+
+        var columnsList = context.ColumnDefinitions.Where(column => column.TableDefinitionsId == tableId).ToList();
+
+        return columnsList;
+    }
+
+    /// <summary>
+    /// Retrieves the columns of a table.
+    /// </summary>
+    /// <param name="roleId">role id of table the columns are in.</param>
+    /// <returns>List of ColumnDefinitionsModel.</returns>
+    /// <exception cref="TableDoesNotExistException">If no table exists with the given role id.</exception>
+    public List<ColumnDefinitionsModel> GetColumns(ulong roleId)
+    {
+        var context = _factory.CreateDbContext();
+
+        TableDefinitionsModel? tableDefinition = context.TableDefinitions.FirstOrDefault(table => table.RoleId == roleId);
+
+        if (tableDefinition is null) throw new TableDoesNotExistException(roleId);
+
+        var columnsList = context.ColumnDefinitions.Where(column => column.TableDefinitionsId == tableDefinition.Id).ToList();
+
+        return columnsList;
+    }
+
+    /// <summary>
+    /// Retrieves the columns of a table.
+    /// </summary>
+    /// <param name="tableName">name of table the columns are in.</param>
+    /// <returns>List of ColumnDefinitionsModel.</returns>
+    /// <exception cref="TableDoesNotExistException">If no table exists with the given name.</exception>
+    public List<ColumnDefinitionsModel> GetColumns(string tableName)
+    {
+        var context = _factory.CreateDbContext();
+
+        TableDefinitionsModel? tableDefinition = context.TableDefinitions.FirstOrDefault(table => table.Name.Equals(tableName));
+
+        if (tableDefinition is null) throw new TableDoesNotExistException(tableName);
+
+        var columnsList = context.ColumnDefinitions.Where(column => column.TableDefinitionsId == tableDefinition.Id).ToList();
+
+        return columnsList;
+    }
+
+    /// <summary>
     /// Renames a column.
     /// </summary>
     /// <param name="columnId">The id of the column to rename.</param>
@@ -242,38 +299,6 @@ public partial class EinDataAccess
     ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     /// <summary>
-    /// Helper method for the RenameColumn methods.
-    /// </summary>
-    /// <param name="tableId">Table id of the table the column is on.</param>
-    /// <param name="oldColumnName">The old column name.</param>
-    /// <param name="newColumnName">The new column name.  Only '-' and alpha-numeric allowed.</param>
-    /// <param name="context">The dbcontext</param>
-    /// <returns>A ColumnDefinitionsModel of the column which was renamed.</returns>
-    /// <exception cref="TableDoesNotExistException">If the table with the given id doesn't exist.</exception>
-    /// <exception cref="ColumnDoesNotExistException">If the column with the given oldColumnName doesn't exist.</exception>
-    /// <exception cref="InvalidNameException">If the new column name is invalid.</exception>"
-    private ColumnDefinitionsModel RenameColumnHelper(int tableId, string oldColumnName, string newColumnName, EinDataContext context)
-    {
-        TableDefinitionsModel? tableDefinition = context.TableDefinitions.FirstOrDefault(table => table.Id == tableId);
-
-        if (tableDefinition is null) throw new TableDoesNotExistException(tableId);
-
-        ColumnDefinitionsModel? columnDefinition = context.ColumnDefinitions.FirstOrDefault(column => column.Name.Equals(oldColumnName) && column.TableDefinitionsId == tableId);
-
-        if (columnDefinition is null) throw new ColumnDoesNotExistException(tableDefinition.Name, oldColumnName);
-
-        var columnName = newColumnName.ToAlphaNumericDash().Trim();
-
-        if (string.IsNullOrEmpty(columnName)) throw new InvalidNameException(newColumnName);
-
-        columnDefinition.Name = columnName;
-
-        context.SaveChanges();
-
-        return columnDefinition;
-    }
-
-    /// <summary>
     /// Helper method for creating columns.
     /// </summary>
     /// <param name="tableId">The id of the table this column should be placed in.</param>
@@ -313,5 +338,36 @@ public partial class EinDataAccess
         return columnDefinitionsModel;
     }
 
+    /// <summary>
+    /// Helper method for the RenameColumn methods.
+    /// </summary>
+    /// <param name="tableId">Table id of the table the column is on.</param>
+    /// <param name="oldColumnName">The old column name.</param>
+    /// <param name="newColumnName">The new column name.  Only '-' and alpha-numeric allowed.</param>
+    /// <param name="context">The dbcontext</param>
+    /// <returns>A ColumnDefinitionsModel of the column which was renamed.</returns>
+    /// <exception cref="TableDoesNotExistException">If the table with the given id doesn't exist.</exception>
+    /// <exception cref="ColumnDoesNotExistException">If the column with the given oldColumnName doesn't exist.</exception>
+    /// <exception cref="InvalidNameException">If the new column name is invalid.</exception>"
+    private ColumnDefinitionsModel RenameColumnHelper(int tableId, string oldColumnName, string newColumnName, EinDataContext context)
+    {
+        TableDefinitionsModel? tableDefinition = context.TableDefinitions.FirstOrDefault(table => table.Id == tableId);
+
+        if (tableDefinition is null) throw new TableDoesNotExistException(tableId);
+
+        ColumnDefinitionsModel? columnDefinition = context.ColumnDefinitions.FirstOrDefault(column => column.Name.Equals(oldColumnName) && column.TableDefinitionsId == tableId);
+
+        if (columnDefinition is null) throw new ColumnDoesNotExistException(tableDefinition.Name, oldColumnName);
+
+        var columnName = newColumnName.ToAlphaNumericDash().Trim();
+
+        if (string.IsNullOrEmpty(columnName)) throw new InvalidNameException(newColumnName);
+
+        columnDefinition.Name = columnName;
+
+        context.SaveChanges();
+
+        return columnDefinition;
+    }
 
 }
