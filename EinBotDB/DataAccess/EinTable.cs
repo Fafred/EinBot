@@ -8,12 +8,11 @@ using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Text;
 using System.Threading.Tasks;
 
 public partial class EinTable
 {
-    private Dictionary<string, Type> _columnTypes = new Dictionary<string, Type>();
-
     private int _tableId;
     public int TableId { get { return _tableId; } }
 
@@ -51,6 +50,33 @@ public partial class EinTable
     internal EinTable(int tableId, EinDataContext context)
     {
         LoadTable(tableId, context);
+    }
+
+    public string ToCSVString()
+    {
+        StringBuilder sb = new StringBuilder();
+
+        var columnsList = ColumnDataTypes.Keys.ToList();
+
+        sb.Append("ID,Key,");
+
+        for(int i = 0; i < columnsList.Count; ++i)
+        {
+            sb.Append(columnsList[i]);
+
+            if (i < columnsList.Count - 1)
+            {
+                sb.Append(',');
+            }
+        }
+        sb.AppendLine();
+
+        foreach(var row in Rows)
+        {
+            sb.AppendLine(row.ToCSVString(columnsList));
+        }
+
+        return sb.ToString();
     }
 
     private void LoadTable(int tableId, EinDataContext context)

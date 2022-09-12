@@ -5,14 +5,15 @@ using Microsoft.Extensions.DependencyInjection;
 
 public static partial class HostSetup
 {
-    public static IServiceCollection SetupConfiguration(this IServiceCollection serviceCollection)
+    public static IServiceCollection SetupConfiguration(this IServiceCollection serviceCollection, out IConfiguration configuration)
     {
-        var configuration = new ConfigurationBuilder()
+        var config = new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())
             .AddJsonFile("appsettings.json")
             .AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT")}.json", optional: true, reloadOnChange: true)
             .Build();
 
-        return serviceCollection.AddSingleton(configuration);
+        configuration = config;
+        return serviceCollection.AddSingleton(config);
     }
 }

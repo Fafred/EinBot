@@ -6,7 +6,14 @@ using System;
 
 public partial class EinDataAccess
 {
-
+    /// <summary>
+    /// Add a row to a table.
+    /// </summary>
+    /// <param name="tableId">The id of the table to add a row to.</param>
+    /// <param name="key">The key of the role.</param>
+    /// <param name="columnsDataDict">A dictionary with Key:Value of ColumnName:Data</param>
+    /// <returns>The row number of the newly insterted row.</returns>
+    /// <exception cref="InvalidDataException">If one of the given data types doesn't match the data type defined by the column.</exception>
     public int AddRow(int tableId, string key, Dictionary<string, string>? columnsDataDict)
     {
         using var context = _factory.CreateDbContext();
@@ -34,7 +41,7 @@ public partial class EinDataAccess
             {
                 var data = columnsDataDict[columnDef.Name];
 
-                if (!IsValidValue(columnDef.Id, data, context)) throw new InvalidDataException();
+                if (!IsValidValue(columnDef.Id, data, context)) throw new InvalidDataException($"Column {columnDef.Name} expects {columnDef.DataTypes.Name}.  Received: {data}");
                 
                 cellModel.Data = data;
             }
@@ -47,6 +54,14 @@ public partial class EinDataAccess
         return curRow;
     }
 
+    /// <summary>
+    /// Changes the key of a row.
+    /// </summary>
+    /// <param name="tableId">The id of the table the row is in.</param>
+    /// <param name="rowNum">The row number of the row.</param>
+    /// <param name="key">The new key to assign.</param>
+    /// <returns>True/False of success.</returns>
+    /// <exception cref="TableDoesNotExistException">If the given table does not exist.</exception>
     public bool ChangeKey(int tableId, int rowNum, string key)
     {
         using var context = _factory.CreateDbContext();
@@ -67,6 +82,14 @@ public partial class EinDataAccess
         return true;
     }
 
+    /// <summary>
+    /// Removes a row from a table.
+    /// </summary>
+    /// <param name="tableId">The table to remove the row from.</param>
+    /// <param name="rowNum">The number of the row to remove (if null, must provide a key).</param>
+    /// <param name="key">The key of the row to remove (if null, must provide a rowNum).</param>
+    /// <returns>True/False of success.</returns>
+    /// <exception cref="TableDoesNotExistException">If the table does not exist.</exception>
     public bool DeleteRow(int tableId, int? rowNum = null, string? key = null)
     {
         if (rowNum is null && key is null) return false;
@@ -92,6 +115,16 @@ public partial class EinDataAccess
         return true;
     }
 
+    /// <summary>
+    /// Updates a row with the given data.
+    /// </summary>
+    /// <param name="tableId">Id of the table to update the row in.</param>
+    /// <param name="columnsDataDict">A dictionary with Key:Value of ColumnName:Data</param>
+    /// <param name="rowNum">The row number of the row to update (if null, must provide a key).</param>
+    /// <param name="key">The key of the row to update (if null, must provide a rollNum).</param>
+    /// <returns>True/False of success.</returns>
+    /// <exception cref="TableDoesNotExistException">If the table does not exist.</exception>
+    /// <exception cref="InvalidDataException">If the given data type does not match the defined data type for the column.</exception>
     public bool UpdateRow(int tableId, Dictionary<string, string> columnsDataDict, int? rowNum = null, string? key = null)
     {
         if (rowNum is null && key is null) return false;
@@ -118,7 +151,7 @@ public partial class EinDataAccess
             {
                 var data = columnsDataDict[cell.ColumnDefinitions.Name];
 
-                if (!IsValidValue(cell.ColumnDefinitionsId, data, context)) throw new InvalidDataException();
+                if (!IsValidValue(cell.ColumnDefinitionsId, data, context)) throw new InvalidDataException($"Column {cell.ColumnDefinitions.Name} expects {cell.ColumnDefinitions.DataTypes.Name}.  Received: {data}"); ;
 
                 cell.Data = data;
             }

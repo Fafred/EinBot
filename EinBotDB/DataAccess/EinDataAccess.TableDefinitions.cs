@@ -38,7 +38,7 @@ public partial class EinDataAccess
     /// </summary>
     /// <param name="tableId">The id of the table to delete.</param>
     /// <exception cref="TableDoesNotExistException">If there's no table with the given table id.</exception>
-    public void DeleteTable(int tableId)
+    public TableDefinitionsModel DeleteTable(int tableId)
     {
         using var context = _factory.CreateDbContext();
 
@@ -46,9 +46,11 @@ public partial class EinDataAccess
 
         if (tableDefiniton is null) throw new TableDoesNotExistException(tableId);
 
-        context.TableDefinitions.Remove(tableDefiniton);
+        tableDefiniton = context.TableDefinitions.Remove(tableDefiniton).Entity;
 
         context.SaveChanges();
+
+        return tableDefiniton;
     }
 
     /// <summary>
@@ -56,7 +58,7 @@ public partial class EinDataAccess
     /// </summary>
     /// <param name="tableName">The name of the table to delete.</param>
     /// <exception cref="TableDoesNotExistException">If there's no table with the given name.</exception>
-    public void DeleteTable(string tableName)
+    public TableDefinitionsModel DeleteTable(string tableName)
     {
         using var context = _factory.CreateDbContext();
 
@@ -64,9 +66,11 @@ public partial class EinDataAccess
 
         if (tableDefinition is null) throw new TableDoesNotExistException(tableName);
 
-        context.TableDefinitions.Remove(tableDefinition);
+        tableDefinition = context.TableDefinitions.Remove(tableDefinition).Entity;
 
         context.SaveChanges();
+
+        return tableDefinition;
     }
 
     /// <summary>
@@ -74,7 +78,7 @@ public partial class EinDataAccess
     /// </summary>
     /// <param name="roleId">The role id of the table to delete.</param>
     /// <exception cref="TableDoesNotExistException">If there's no table with the given role id.</exception>
-    public void DeleteTable(ulong roleId)
+    public TableDefinitionsModel DeleteTable(ulong roleId)
     {
         using var context = _factory.CreateDbContext();
 
@@ -82,9 +86,11 @@ public partial class EinDataAccess
 
         if (tableDefinition is null) throw new TableDoesNotExistException(roleId);
 
-        context.TableDefinitions.Remove(tableDefinition);
+        tableDefinition = context.TableDefinitions.Remove(tableDefinition).Entity;
 
         context.SaveChanges();
+
+        return tableDefinition;
     }
 
     /// <summary>
@@ -93,7 +99,8 @@ public partial class EinDataAccess
     /// <param name="tableId">Table id of the table to rename</param>
     /// <param name="newTableName">Name to set the table to.</param>
     /// <exception cref="InvalidNameException">Thrown if the the table name is invalid.</exception>
-    public void RenameTable(int tableId, string newTableName)
+    /// <exception cref="TableDoesNotExistException">If the table does not exist.</exception>
+    public string RenameTable(int tableId, string newTableName)
     {
         var name = newTableName.ToAlphaNumericDash();
 
@@ -103,9 +110,15 @@ public partial class EinDataAccess
 
         TableDefinitionsModel? tableDefinition = GetTable(context, tableId: tableId);
 
+        if (tableDefinition is null) throw new TableDoesNotExistException(tableId);
+
+        var oldName = tableDefinition.Name;
+
         tableDefinition.Name = name;
 
         context.SaveChanges();
+
+        return oldName;
     }
 
     /// <summary>
@@ -114,7 +127,8 @@ public partial class EinDataAccess
     /// <param name="tableName">Old name of the table</param>
     /// <param name="newTableName">Name to set the table to.</param>
     /// <exception cref="InvalidNameException">Thrown if the the table name is invalid.</exception>
-    public void RenameTable(string tableName, string newTableName)
+    /// <exception cref="TableDoesNotExistException">If the table does not exist.</exception>
+    public string RenameTable(string tableName, string newTableName)
     {
         var name = newTableName.ToAlphaNumericDash();
 
@@ -124,9 +138,15 @@ public partial class EinDataAccess
 
         TableDefinitionsModel? tableDefinition = GetTable(context, tableName: tableName);
 
+        if (tableDefinition is null) throw new TableDoesNotExistException(tableName);
+
+        var oldName = tableDefinition.Name;
+
         tableDefinition.Name = name;
 
         context.SaveChanges();
+
+        return oldName;
     }
 
     /// <summary>
@@ -135,7 +155,8 @@ public partial class EinDataAccess
     /// <param name="roleId">Role id of the table to rename</param>
     /// <param name="newTableName">Name to set the table to.</param>
     /// <exception cref="InvalidNameException">Thrown if the the table name is invalid.</exception>
-    public void RenameTable(ulong roleId, string newTableName)
+    /// <exception cref="TableDoesNotExistException">If the table does not exist.</exception>
+    public string RenameTable(ulong roleId, string newTableName)
     {
         var name = newTableName.ToAlphaNumericDash();
 
@@ -145,7 +166,26 @@ public partial class EinDataAccess
 
         TableDefinitionsModel? tableDefinition = GetTable(context, roleId: roleId);
 
+        if (tableDefinition is null) throw new TableDoesNotExistException(roleId);
+
+        var oldName = tableDefinition.Name;
+
         tableDefinition.Name = name;
+
+        context.SaveChanges();
+
+        return oldName;
+    }
+
+    public void SetTableRole(ulong oldRoleId, ulong newRoleId)
+    {
+        using var context = _factory.CreateDbContext();
+
+        TableDefinitionsModel? tableDefinition = GetTable(context, roleId: oldRoleId);
+
+        if (tableDefinition is null) throw new TableDoesNotExistException(oldRoleId);
+
+        tableDefinition.RoleId = newRoleId;
 
         context.SaveChanges();
     }

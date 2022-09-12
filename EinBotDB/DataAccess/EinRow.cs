@@ -1,6 +1,7 @@
 ﻿namespace EinBotDB.DataAccess;
 
 using EinBotDB.Models;
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -110,6 +111,32 @@ public partial class EinTable
 
             _string = stringBuilder.ToString();
             return _string;
+        }
+
+        internal string ToCSVString(List<string> columnsList)
+        {
+            StringBuilder sb = new StringBuilder();
+
+            sb.Append($"{Id},{Key},");
+
+            for (int i = 0; i < columnsList.Count; ++i)
+            {
+                string columnName = columnsList[i];
+
+                if (!Columns.ContainsKey(columnName))
+                {
+                    sb.Append(',');
+                    continue;
+                }
+
+                if (IsColumnList(columnName)) throw new NotImplementedException("EinRow.ToCSVString: List columns.");
+
+                sb.Append(Columns[columnName]);
+
+                if (i < columnsList.Count - 1) sb.Append(',');
+            }
+
+            return sb.ToString();
         }
     }
 }

@@ -78,7 +78,11 @@ public partial class EinDataAccess
 
         if (columnDefinition is null) throw new ColumnDoesNotExistException("Unknown", columnId);
 
-        return context.ColumnDefinitions.Remove(columnDefinition).Entity;
+        columnDefinition = context.Remove(columnDefinition).Entity;
+
+        context.SaveChanges();
+
+        return columnDefinition;
     }
 
     /// <summary>
@@ -96,7 +100,11 @@ public partial class EinDataAccess
 
         if (columnDefinition is null) throw new ColumnDoesNotExistException(tableId.ToString(), columnName);
 
-        return context.Remove(columnDefinition).Entity;
+        columnDefinition = context.Remove(columnDefinition).Entity;
+
+        context.SaveChanges();
+
+        return columnDefinition;
     }
 
     /// <summary>
@@ -121,7 +129,11 @@ public partial class EinDataAccess
 
         if (columnDefinition is null) throw new ColumnDoesNotExistException(tableId.ToString(), columnName);
 
-        return context.Remove(columnDefinition).Entity;
+        columnDefinition = context.Remove(columnDefinition).Entity;
+
+        context.SaveChanges();
+
+        return columnDefinition;
     }
 
     /// <summary>
@@ -146,7 +158,11 @@ public partial class EinDataAccess
 
         if (columnDefinition is null) throw new ColumnDoesNotExistException(tableId.ToString(), columnName);
 
-        return context.Remove(columnDefinition).Entity;
+        columnDefinition = context.Remove(columnDefinition).Entity;
+
+        context.SaveChanges();
+
+        return columnDefinition;
     }
 
     /// <summary>
@@ -314,7 +330,7 @@ public partial class EinDataAccess
         // Strip unacceptable characters.
         var name = columnName.ToAlphaNumericDash();
 
-        if (string.IsNullOrEmpty(columnName)) throw new InvalidNameException($"Column name {columnName}");
+        if (string.IsNullOrEmpty(name)) throw new InvalidNameException($"Column name {columnName}");
 
         var columnNames = (from column in context.ColumnDefinitions
                            where column.TableDefinitionsId == tableId

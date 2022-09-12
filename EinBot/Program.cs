@@ -4,83 +4,34 @@ using Discord.Commands;
 using Discord.Interactions;
 using Discord.WebSocket;
 using Discord;
+
 using EinBot.General.Services;
 using EinBot.HostSetup;
+
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-/// 
-/// 
-using EinBotDB.Context;
-using EinBotDB.DataAccess;
-using System.Text;
-using Microsoft.EntityFrameworkCore;
 
 public partial class Program
 {
     public static IServiceProvider ServiceProvider { get; private set; }
 
-    public static Task Main() => new Program().Testing();
-
-    public async Task Testing()
-    {
-        var configuration = new ConfigurationBuilder()
-            .SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("appsettings.json")
-            .Build();
-
-        using IHost host = Host.CreateDefaultBuilder()
-            .ConfigureServices((_, services) =>
-                services
-                    .AddDbContextFactory<EinDataContext>(options => options.UseSqlite(configuration.GetConnectionString("EinBotDb")))
-                    .AddSingleton<EinDataAccess>())
-            .Build();
-
-
-        ServiceProvider = host.Services;
-
-        var dal = ServiceProvider.GetRequiredService<EinDataAccess>();
-
-
-        Dictionary<string, string> columnsDataDict = new Dictionary<string, string>()
-        {
-            {"WholeNumber", "100"},
-            {"TextField", "This is a new text field." },
-            {"ListOfStrings", "One element in a list." }
-        };
-
-        dal.CreateTable("GoldTable", CollectionTypesEnum.PerKey);
-        dal.CreateColumn(2, "Gold", DataTypesEnum.Int);
-
-        dal.AddRow(2, "SoAndSo", new Dictionary<string, string>() { { "Gold", "41" } });
-
-        var table = dal.GetEinTable(2);
-
-        foreach(var row in table.Rows)
-        {
-            Console.WriteLine(row);
-        }
-
-
-        Console.WriteLine("---");
-
-
-        Task.Delay(-1);
-    }
-
-
+    public static Task Main() => new Program().MainAsync();
 
     public async Task MainAsync()
     {
         Console.WriteLine("Setting up Host.");
+
+        IConfiguration configuration;
+
         using IHost host = Host.CreateDefaultBuilder()
             .ConfigureServices((_, services) =>
                 services
-                    .SetupConfiguration()
+                    .SetupConfiguration(out configuration)
                     .SetupDiscordClient()
                     .SetupDiscordInteractionService()
                     .SetupDiscordCommandService()
-                    .SetupDataAccess())
+                    .SetupDataAccess(configuration))
             .Build();
 
         ServiceProvider = host.Services;
@@ -110,6 +61,8 @@ public partial class Program
 
     public async Task InitializeServices(IServiceProvider serviceProvider, DiscordSocketClient discordClient, IConfiguration config)
     {
+        var configuration = serviceProvider.GetRequiredService<IConfiguration>();
+
         var commandHandler = serviceProvider.GetRequiredService<CommandHandler>();
         var interactionHandler = serviceProvider.GetRequiredService<InteractionHandler>();
 
@@ -125,7 +78,14 @@ public partial class Program
 
         discordClient.Ready += async () =>
         {
-            await interactionService.RegisterCommandsToGuildAsync(ulong.Parse(config["TestGuildID"]));
+            // Register slash commands.
+            List<string> guildIds = configuration.GetSection("RegisterSlashCommandsto").Get<List<string>>();
+
+            foreach(string guildId in guildIds)
+            {
+                await interactionService.RegisterCommandsToGuildAsync(ulong.Parse(guildId));
+            }
+
         };
     }
 

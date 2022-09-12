@@ -4,7 +4,7 @@ using System;
 using System.Runtime.Serialization;
 
 [Serializable]
-internal class InvalidNameException : Exception
+public class InvalidNameException : Exception
 {
     public InvalidNameException()
     {
