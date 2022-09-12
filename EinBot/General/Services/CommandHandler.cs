@@ -6,6 +6,9 @@ using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
 using System.Reflection;
 
+/// <summary>
+/// Class for handling any prefix commands.
+/// </summary>
 public class CommandHandler
 {
     private readonly DiscordSocketClient _socketClient;

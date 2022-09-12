@@ -5,6 +5,9 @@ using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
 using System.Reflection;
 
+/// <summary>
+/// This class handles all incoming interaction requests.
+/// </summary>
 public class InteractionHandler
 {
     private readonly DiscordSocketClient _socketClient;
@@ -24,6 +27,10 @@ public class InteractionHandler
         _configuration = configuration;
     }
 
+    /// <summary>
+    /// Initializer which uses reflection to load all the interaction modules in the assembly.
+    /// </summary>
+    /// <returns></returns>
     public async Task InitializeAsync()
     {
         // Use reflection to load all the modules.
@@ -32,6 +39,11 @@ public class InteractionHandler
         _socketClient.InteractionCreated += OnInteractionCreated;
     }
 
+    /// <summary>
+    /// Called when the client receives an interaction message.  Finds the correct handler for the interaction and calls it.
+    /// </summary>
+    /// <param name="socketInteraction">The SocketInteraction created by Discord.NET</param>
+    /// <returns></returns>
     private async Task OnInteractionCreated(SocketInteraction socketInteraction)
     {
         try

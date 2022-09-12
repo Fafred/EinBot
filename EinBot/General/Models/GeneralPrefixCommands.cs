@@ -2,6 +2,9 @@
 
 using Discord.Commands;
 
+/// <summary>
+/// Miscellanious prefix commands for testing.
+/// </summary>
 public class CommandModule : ModuleBase<SocketCommandContext>
 {
     [Command("hello")]

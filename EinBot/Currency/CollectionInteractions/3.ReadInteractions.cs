@@ -9,6 +9,11 @@ using EinBot.Currency.Extensions;
 
 public partial class CollectionInteractions
 {
+    /// <summary>
+    /// Displays the collection and the currencies tied to it.
+    /// </summary>
+    /// <param name="Role">The role which has been assigned to the collection.</param>
+    /// <returns></returns>
     [SlashCommand("info", "Usage /collection view {@Role}")]
     public async Task HandleCollectionViewCommand(IRole Role)
     {
@@ -28,6 +33,10 @@ public partial class CollectionInteractions
         await RespondAsync(embed: embed);
     }
 
+    /// <summary>
+    /// Displays a list of the collections available on the caller's Discord guild.
+    /// </summary>
+    /// <returns></returns>
     [SlashCommand("list", "Lists all the availble collections.")]
     public async Task HandleCollectionListCommand()
     {
@@ -44,7 +53,11 @@ public partial class CollectionInteractions
             {
                 var tableDefinition = _dataAccess.GetTable(role.Id);
 
-                embedDisplay.AddField($"{role.Mention} - {(CollectionTypesEnum)tableDefinition.CollectionTypeId}", "_ _", inline: false);
+                embedDisplay.AddField(
+                    $"{role.Mention}",
+                    $"*Type*: {(CollectionTypesEnum)tableDefinition.CollectionTypeId}\n*Id*: {tableDefinition.Id}\n*Name*: {tableDefinition.Name}\n*Currencies*: {tableDefinition.ColumnDefinitions.Count}",
+                    inline: false);
+
             } catch (TableDoesNotExistException e)
             {
                 continue;

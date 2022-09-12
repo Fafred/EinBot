@@ -2,15 +2,20 @@
 
 using Discord;
 using EinBotDB.DataAccess;
-using Microsoft.EntityFrameworkCore.Metadata;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
+/// <summary>
+/// Extensions for Discord.NET's EmbedBuilder class.
+/// </summary>
 public static class EmbedBuilderExtensions
 {
+    /// <summary>
+    /// Extension to the EmbedBuilder class which takes an EinTable and manipulates an EmbedBuilder object to display it.
+    /// </summary>
+    /// <param name="eb">This embed builder.</param>
+    /// <param name="eTable">The EinTable to display.</param>
+    /// <param name="role">The role of the table.  This should match the role associated with the EinTable, but cannot be not enforced.</param>
+    /// <returns></returns>
     public static EmbedBuilder DisplayEinTable(this EmbedBuilder eb, EinTable eTable, IRole role)
     {
         StringBuilder strBuilder = new StringBuilder();

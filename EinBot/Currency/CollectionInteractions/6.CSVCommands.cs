@@ -8,6 +8,9 @@ using EinBotDB;
 
 public partial class CollectionInteractions
 {
+    /// <summary>
+    /// Sub-Class for handling CSV related commands.
+    /// </summary>
     [Group("csv", "CSV file related commands.")]
     public class CollectionInteractionsCSV : InteractionModuleBase<SocketInteractionContext>
     {
@@ -18,16 +21,28 @@ public partial class CollectionInteractions
             _dataAccess = dataAccess;
         }
 
+        /// <summary>
+        /// Creates a table and adds currencies based off the attached CSV file.
+        /// </summary>
+        /// <param name="role">Role to associate the table with.</param>
+        /// <param name="collectionType">The collection type of the table.</param>
+        /// <param name="csvFile">A csv file in the format: currency_name, currency_data_type</param>
+        /// <returns></returns>
         [SlashCommand("create", "Create a new currency collection from a CSV file.")]
         public async Task HandleCollectionCreateFromCSVCommand(
             IRole role,
-            DataTypesEnum dataType,
+            CollectionTypesEnum collectionType,
             IAttachment csvFile)
         {
             await RespondAsync("Not implemented yet.");
             return;
         }
 
+        /// <summary>
+        /// Converts a table and its rows to a CSV file and uploads it to the Discord channel.
+        /// </summary>
+        /// <param name="role">The role associated with the table.</param>
+        /// <returns></returns>
         [SlashCommand("get", "Usage: /collection csv get {@Role}")]
         public async Task HandleCollectionToCSVCommand(IRole role)
         {

@@ -10,6 +10,12 @@ using System.Data;
 
 public partial class CollectionInteractions
 {
+    /// <summary>
+    /// Assigns a new role to the collection.
+    /// </summary>
+    /// <param name="OldRole">The old role assigned to the collection.</param>
+    /// <param name="NewRole">The role to replace the old role.</param>
+    /// <returns></returns>
     [SlashCommand("re-role", "Assigns a different role to the collection")]
     public async Task HandleCollectionAssignRoleCommand(IRole OldRole, IRole NewRole)
     {
