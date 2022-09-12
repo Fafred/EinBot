@@ -188,6 +188,30 @@ public interface IEinDataAccess
     EinTable GetEinTable(ulong roleId);
 
     /// <summary>
+    /// Retrieves a table with the given name.
+    /// </summary>
+    /// <param name="tableName">Name of the table.</param>
+    /// <returns>The TableDefinitionsModel of the table.</returns>
+    /// <exception cref="TableDoesNotExistException">If a table with the given table name does not exist.</exception>
+    public TableDefinitionsModel GetTable(string tableName);
+
+    /// <summary>
+    /// Retrieves a table with the given role id.
+    /// </summary>
+    /// <param name="tableId">Table id of the table.</param>
+    /// <returns>The TableDefinitionsModel of the table.</returns>
+    /// <exception cref="TableDoesNotExistException">If a table with the given table id does not exist.</exception>
+    public TableDefinitionsModel GetTable(int tableId);
+
+    /// <summary>
+    /// Retrieves a table with the given role id.
+    /// </summary>
+    /// <param name="roleId">Role id associated with the table.</param>
+    /// <returns>The TableDefinitionsModel of the table.</returns>
+    /// <exception cref="TableDoesNotExistException">If a table with the given role id does not exist.</exception>
+    public TableDefinitionsModel GetTable(ulong roleId);
+
+    /// <summary>
     /// Renames a column.
     /// </summary>
     /// <param name="columnId">The id of the column to rename.</param>

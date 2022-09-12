@@ -94,6 +94,57 @@ public partial class EinDataAccess
     }
 
     /// <summary>
+    /// Retrieves a table with the given name.
+    /// </summary>
+    /// <param name="tableName">Name of the table.</param>
+    /// <returns>The TableDefinitionsModel of the table.</returns>
+    /// <exception cref="TableDoesNotExistException">If a table with the given table name does not exist.</exception>
+    public TableDefinitionsModel GetTable(string tableName)
+    {
+        using var context = _factory.CreateDbContext();
+
+        TableDefinitionsModel? tableDefinition = context.TableDefinitions.FirstOrDefault(table => table.Name.Equals(tableName));
+
+        if (tableDefinition is null) throw new TableDoesNotExistException(tableName);
+
+        return tableDefinition;
+    }
+
+    /// <summary>
+    /// Retrieves a table with the given role id.
+    /// </summary>
+    /// <param name="tableId">Table id of the table.</param>
+    /// <returns>The TableDefinitionsModel of the table.</returns>
+    /// <exception cref="TableDoesNotExistException">If a table with the given table id does not exist.</exception>
+    public TableDefinitionsModel GetTable(int tableId)
+    {
+        using var context = _factory.CreateDbContext();
+
+        TableDefinitionsModel? tableDefinition = context.TableDefinitions.FirstOrDefault(table => table.Id == tableId);
+
+        if (tableDefinition is null) throw new TableDoesNotExistException(tableId);
+
+        return tableDefinition;
+    }
+
+    /// <summary>
+    /// Retrieves a table with the given role id.
+    /// </summary>
+    /// <param name="roleId">Role id associated with the table.</param>
+    /// <returns>The TableDefinitionsModel of the table.</returns>
+    /// <exception cref="TableDoesNotExistException">If a table with the given role id does not exist.</exception>
+    public TableDefinitionsModel GetTable(ulong roleId)
+    {
+        using var context = _factory.CreateDbContext();
+
+        TableDefinitionsModel? tableDefinition = context.TableDefinitions.FirstOrDefault(table => table.RoleId == roleId);
+
+        if (tableDefinition is null) throw new TableDoesNotExistException(roleId);
+
+        return tableDefinition;
+    }
+
+    /// <summary>
     /// Rename a table.
     /// </summary>
     /// <param name="tableId">Table id of the table to rename</param>

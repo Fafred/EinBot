@@ -28,39 +28,30 @@ public partial class CollectionInteractions
         await RespondAsync(embed: embed);
     }
 
-    [SlashCommand("to-csv", "Usage: /collection to-csv {@Role}")]
-    public async Task HandleCollectionToCSVCommand(IRole role)
+    [SlashCommand("list", "Lists all the availble collections.")]
+    public async Task HandleCollectionListCommand()
     {
-        try
+        var embedDisplay = new EmbedBuilder()
+            .WithTitle("Collections")
+            .WithColor(Color.Purple)
+            .WithDescription("The following collections are available:");
+
+        var guildRolesList = Context.Guild.Roles;
+
+        foreach(IRole role in guildRolesList)
         {
-            var einTable = _dataAccess.GetEinTable(role.Id);
-            await RespondAsync($"Loading file...");
-
-            string fileName = $"{einTable.Name}.csv";
-            string csvString = einTable.ToCSVString();
-
-            using var memoryStream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(csvString));
-
-            List<FileAttachment> fileAttachments = new List<FileAttachment>()
+            try
             {
-                new FileAttachment(memoryStream, fileName)
-            };
+                var tableDefinition = _dataAccess.GetTable(role.Id);
 
-            await ModifyOriginalResponseAsync(originalResponse =>
-                {
-                    originalResponse.Attachments = fileAttachments;
-                    originalResponse.Content = "File loaded.";
-                });
-
-            return;
-        } catch (TableDoesNotExistException e)
-        {
-            await RespondAsync($"There is no collection associated with {role.Mention}.");
-            return;
-        } catch (ArgumentNullException e)
-        {
-            await RespondAsync($"Error: {e.Message}.");
-            return;
+                embedDisplay.AddField($"{role.Mention} - {(CollectionTypesEnum)tableDefinition.CollectionTypeId}", "_ _", inline: false);
+            } catch (TableDoesNotExistException e)
+            {
+                continue;
+            }
         }
+
+        await RespondAsync(embed: embedDisplay.Build());
+        return;
     }
 }
