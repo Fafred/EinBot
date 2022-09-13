@@ -16,6 +16,7 @@ public class EinDataContextFactory : IDesignTimeDbContextFactory<EinDataContext>
             .Build();
 
         var options = new DbContextOptionsBuilder()
+            .UseLazyLoadingProxies()
             .UseSqlite(configuration.GetConnectionString("EinBotDB"))
             .Options;
 

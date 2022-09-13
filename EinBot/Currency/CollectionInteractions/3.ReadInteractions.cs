@@ -51,16 +51,23 @@ public partial class CollectionInteractions
         {
             try
             {
-                var tableDefinition = _dataAccess.GetTable(role.Id);
+                var einTable = _dataAccess.GetEinTable(role.Id);
+                var collectionType = einTable.CollectionTypeName;
+                var tableId = einTable.TableId;
+                var currencyCount = einTable.ColumnDataTypes.Count;
+                var instances = einTable.Rows.Count;
 
                 embedDisplay.AddField(
-                    $"{role.Mention}",
-                    $"*Type*: {(CollectionTypesEnum)tableDefinition.CollectionTypeId}\n*Id*: {tableDefinition.Id}\n*Name*: {tableDefinition.Name}\n*Currencies*: {tableDefinition.ColumnDefinitions.Count}",
-                    inline: false);
+                    "_ _",
+                    $"**{role.Mention}**\n*Type*: {collectionType}\n*Currencies*: {currencyCount}\n*Instances*: {instances}",
+                    inline: true);
 
             } catch (TableDoesNotExistException e)
             {
                 continue;
+            } catch (NullReferenceException e)
+            {
+                Console.WriteLine(e);
             }
         }
 

@@ -19,6 +19,9 @@ public partial class EinTable
     private string _tableName;
     public string Name { get { return _tableName; } }
 
+    private ulong _roleId;
+    public ulong RoleId { get { return _roleId; } }
+
     private int _collectionTypeId;
     public int CollectionTypeId { get { return _collectionTypeId; } }
 

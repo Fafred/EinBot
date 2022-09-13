@@ -68,8 +68,9 @@ public interface IEinDataAccess
     /// <param name="collectionType">The type of collection this table is.</param>
     /// <param name="roleId">The role id associated with this table.</param>
     /// <returns>The TableDefinitionsModel entity of the created table.</returns>
-    /// <exception cref="InvalidNameException"></exception>
-    TableDefinitionsModel? CreateTable(string tableName, CollectionTypesEnum collectionType, ulong? roleId = null);
+    /// <exception cref="InvalidNameException">If the table name is invalid.</exception>
+    /// <exception cref="TableAlreadyExistsException">If a table already exists with the given name or role.</exception>"
+    TableDefinitionsModel? CreateTable(string tableName, CollectionTypesEnum collectionType, ulong roleId);
 
     /// <summary>
     /// Attempts to delete a column with the given id.
@@ -162,6 +163,13 @@ public interface IEinDataAccess
     /// <returns>List of ColumnDefinitionsModel.</returns>
     /// <exception cref="TableDoesNotExistException">If no table exists with the given role id.</exception>
     List<ColumnDefinitionsModel> GetColumns(ulong roleId);
+
+    /// <summary>
+    /// Returns the DataType id with the given name, or null if none is found.
+    /// </summary>
+    /// <param name="dataTypeName">The name of the data type.</param>
+    /// <returns>The DataType id with that name, or null if none is found.</returns>
+    int? GetDataTypeId(string dataTypeName);
 
     /// <summary>
     /// Creates and returns an EinTable object from the given table name.
