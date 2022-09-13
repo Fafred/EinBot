@@ -114,7 +114,7 @@ public partial class CollectionInteractions
 
                 foreach(var line in resultList)
                 {
-                    if (sb.Length + line.Length < 1997)
+                    if (sb.Length + line.Length < 1990)
                     {
                         sb.AppendLine(line);
                     } else
