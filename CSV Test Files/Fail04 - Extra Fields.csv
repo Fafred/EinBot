@@ -1,0 +1,6 @@
+CurrencyName,DataType
+Int,Int
+Wis,Text
+Gold,Int, Something else,
+CurrencyText2,Text
+CurrencyText3,Text

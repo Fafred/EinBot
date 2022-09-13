@@ -2,6 +2,7 @@
 
 using EinBotDB.Context;
 using EinBotDB.Models;
+using System.Security.Cryptography.X509Certificates;
 
 public partial class EinDataAccess
 {
@@ -13,13 +14,18 @@ public partial class EinDataAccess
     /// <param name="roleId">The role id associated with this table.</param>
     /// <returns>The TableDefinitionsModel entity of the created table.</returns>
     /// <exception cref="InvalidNameException"></exception>
-    public TableDefinitionsModel? CreateTable(string tableName, CollectionTypesEnum collectionType, ulong? roleId = null)
+    /// <exception cref="TableAlreadyExistsException"></exception>"
+    public TableDefinitionsModel? CreateTable(string tableName, CollectionTypesEnum collectionType, ulong roleId)
     {
         using var context = _factory.CreateDbContext();
 
         var name = tableName.ToAlphaNumericDash().Trim();
 
         if (string.IsNullOrEmpty(name)) throw new InvalidNameException($"Table name: {tableName}");
+
+        if (context.TableDefinitions.FirstOrDefault(table => table.RoleId == roleId) is not null) throw new TableAlreadyExistsException(roleId);
+        if (context.TableDefinitions.FirstOrDefault(table => table.Name.Equals(tableName)) is not null) throw new TableAlreadyExistsException(tableName);
+
 
         TableDefinitionsModel tableDefinition = new TableDefinitionsModel()
         {

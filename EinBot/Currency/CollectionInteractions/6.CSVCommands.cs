@@ -5,6 +5,10 @@ using Discord;
 using Discord.Interactions;
 using EinBotDB.DataAccess;
 using EinBotDB;
+using Microsoft.EntityFrameworkCore.Query;
+using System.Text;
+using CsvHelper;
+using EinBotDB.Models;
 
 public partial class CollectionInteractions
 {
@@ -34,8 +38,104 @@ public partial class CollectionInteractions
             CollectionTypesEnum collectionType,
             IAttachment csvFile)
         {
-            await RespondAsync("Not implemented yet.");
-            return;
+            TableDefinitionsModel? tableDefinition;
+
+            try
+            {
+                tableDefinition = _dataAccess.CreateTable(role.Name, collectionType, role.Id);
+
+                if (tableDefinition is null) throw new NullReferenceException();
+            } catch (TableAlreadyExistsException e)
+            {
+                await RespondAsync($"There is already a currency assigned to role {role.Mention}.");
+                return;
+            } catch (NullReferenceException e)
+            {
+                await RespondAsync($"Unable to create currency.");
+                return;
+            }
+
+            await RespondAsync($"Currency {role.Mention} has been created as a {(CollectionTypesEnum)tableDefinition.CollectionTypeId} collection.\n\nPlease wait while attempting to create currencies from the following file:\n```\nFilename: {csvFile.Filename}\nContent type: {csvFile.ContentType}\nProxy URL: {csvFile.Url}\nSize: {csvFile.Size}\n```");
+
+            try
+            {
+                using var httpClient = new HttpClient();
+                using var stream = httpClient.GetStreamAsync(csvFile.Url).Result;
+                using var streamReader = new StreamReader(stream);
+                using var csvReader = new CsvReader(streamReader, System.Globalization.CultureInfo.CurrentCulture);
+
+                var anonRecord = new
+                {
+                    CurrencyName = "",
+                    DataType = "",
+                };
+
+
+                List<string> resultList = new List<string>();
+                int counter = 1;
+                foreach(var record in csvReader.GetRecords(anonRecord))
+                {
+                    try
+                    {
+                        if (record.CurrencyName is null)
+                        {
+                            resultList.Add($"-[Row {counter++:D3}]\t{record} NOT ADDED. CURRENCY NAME CANNOT BE NULL.");
+                            continue;
+                        } else if (record.DataType is null)
+                        {
+                            resultList.Add($"-[Row {counter++:D3}]\t{record} NOT ADDED. DATA TYPE CANNOT BE NULL.");
+                            continue;
+                        }
+
+                        var columnName = record.CurrencyName;
+                        var dataTypeId = _dataAccess.GetDataTypeId(record.DataType);
+
+                        if (dataTypeId is null)
+                        {
+                            resultList.Add($"-[Row  {counter++:D3} ]\t{record} NOT ADDED.  INVALID DATA TYPE.");
+                            continue;
+                        }
+
+                        _dataAccess.CreateColumn(tableDefinition.Id, columnName, (DataTypesEnum)dataTypeId);
+                        resultList.Add($"+[Row {counter++:D3}]\t{record.CurrencyName} {{{record.DataType}}} has been added to {role.Name}.");
+                    } catch (ColumnAlreadyExistsException e)
+                    {
+                        resultList.Add($"-[Row  {counter++:D3} ]\t{record} NOT ADDED.  CURRENCY ALREADY EXISTS IN THIS COLLECTION.");
+                        continue;
+                    } catch (InvalidNameException e)
+                    {
+                        resultList.Add($"-[Row  {counter++:D3} ]\t{record} NOT ADDED.  INVALID CURRENCY NAME.");
+                        continue;
+                    }
+                }
+
+                StringBuilder sb = new StringBuilder();
+                sb.AppendLine("```diff");
+
+                foreach(var line in resultList)
+                {
+                    if (sb.Length + line.Length < 1990)
+                    {
+                        sb.AppendLine(line);
+                    } else
+                    {
+                        sb.AppendLine("```");
+                        await FollowupAsync(sb.ToString());
+                        sb.Clear();
+                        sb.AppendLine("```diff");
+                        sb.AppendLine(line);
+                    }
+                }
+
+                sb.AppendLine("```");
+
+                await FollowupAsync(sb.ToString());
+
+            } catch (Exception e)
+            {
+                await FollowupAsync($"Something went wrong. Namely:\n```\n{e.Message}\n```");
+                return;
+            }
         }
 
         /// <summary>

@@ -41,7 +41,7 @@ public partial class Program
             {"ListOfStrings", "One element in a list." }
         };
 
-        dal.CreateTable("GoldTable", CollectionTypesEnum.PerKey);
+        dal.CreateTable("GoldTable", CollectionTypesEnum.PerKey, (ulong)Random.Shared.Next());
         dal.CreateColumn(2, "Gold", DataTypesEnum.Int);
 
         dal.AddRow(2, "SoAndSo", new Dictionary<string, string>() { { "Gold", "41" } });
