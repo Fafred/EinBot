@@ -12,8 +12,10 @@ public interface IEinDataAccess
     /// <param name="key">The key of the role.</param>
     /// <param name="columnsDataDict">A dictionary with Key:Value of ColumnName:Data</param>
     /// <returns>The row number of the newly insterted row.</returns>
+    /// <exception cref="KeyAlreadyPresentInTableException">If the given key is already present in the table.</exception>
     /// <exception cref="InvalidDataException">If one of the given data types doesn't match the data type defined by the column.</exception>
-    int AddRow(int tableId, string key, Dictionary<string, string>? columnsDataDict);
+    /// <exception cref="TableDoesNotExistException">If a table with the given tableId does not exist.</exception>"
+    int AddRow(int tableId, string key, Dictionary<string, string>? columnsDataDict = null);
 
     /// <summary>
     /// Changes the key of a row.

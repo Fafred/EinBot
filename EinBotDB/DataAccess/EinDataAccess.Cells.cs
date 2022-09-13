@@ -13,10 +13,22 @@ public partial class EinDataAccess
     /// <param name="key">The key of the role.</param>
     /// <param name="columnsDataDict">A dictionary with Key:Value of ColumnName:Data</param>
     /// <returns>The row number of the newly insterted row.</returns>
+    /// <exception cref="KeyAlreadyPresentInTableException">If the given key is already present in the table.</exception>
     /// <exception cref="InvalidDataException">If one of the given data types doesn't match the data type defined by the column.</exception>
-    public int AddRow(int tableId, string key, Dictionary<string, string>? columnsDataDict)
+    /// <exception cref="TableDoesNotExistException">If a table with the given tableId does not exist.</exception>"
+    public int AddRow(int tableId, string key, Dictionary<string, string>? columnsDataDict = null)
     {
         using var context = _factory.CreateDbContext();
+
+        // Make sure the table actually exists.
+        var tableDefinition = context.TableDefinitions.FirstOrDefault(table => table.Id == tableId);
+
+        if (tableDefinition is null) throw new TableDoesNotExistException(tableId);
+
+        // Make sure there's not an entry with the same key already present.
+        var hasKey = context.Cells.FirstOrDefault(cell => cell.TableDefinitionsId == tableId && cell.RowKey != null && cell.RowKey.Equals(key));
+
+        if (hasKey is not null) throw new KeyAlreadyPresentInTableException(tableId, key);
 
         // This will already throw a TableNotFoundException if the table doesn't exist.
         List<ColumnDefinitionsModel> columnsList = GetColumns(tableId);

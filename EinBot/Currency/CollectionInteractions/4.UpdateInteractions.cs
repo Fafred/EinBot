@@ -17,7 +17,7 @@ public partial class CollectionInteractions
     /// <param name="NewRole">The role to replace the old role.</param>
     /// <returns></returns>
     [SlashCommand("re-role", "Assigns a different role to the collection")]
-    public async Task HandleCollectionAssignRoleCommand(IRole OldRole, IRole NewRole)
+    public async Task HandleCollectionReRoleCommand(IRole OldRole, IRole NewRole)
     {
         try
         {
@@ -38,6 +38,83 @@ public partial class CollectionInteractions
 
     }
 
+    /// <summary>
+    /// Instantiates a collection for a given user, key, or role.
+    /// </summary>
+    /// <param name="role">The role associated with the collection to instantiate.</param>
+    /// <param name="user"></param>
+    /// <param name="key"></param>
+    /// <returns></returns>
+    [SlashCommand("instantiate", "Makes a new instance of the currency.")]
+    public async Task HandleCollectionInstantiateCommand(IRole role, IUser? user = null, string? key = null)
+    {
+        var tableDefinition = _dataAccess.GetTable(role.Id);
+
+        if (tableDefinition is null)
+        {
+            await RespondAsync($"There is no collection associated with {role.Mention}.");
+            return;
+        }
+
+        string tableKey = "";
+        string keyTypeString = "";
+        string keyMention = "";
+
+        if (tableDefinition.CollectionTypeId == (int)CollectionTypesEnum.PerRole)
+        {
+            tableKey = role.Id.ToString();
+            keyMention = role.Mention;
+            keyTypeString = "role";
+        } else if (tableDefinition.CollectionTypeId == (int)CollectionTypesEnum.PerUser)
+        {
+            if (user is null)
+            {
+                await RespondAsync($"{role.Mention} has a collection type of PerUser.  You must mention a user (@UserName) in the user input in order to instantiate the collection.");
+                return;
+            }
+
+            tableKey = user.Id.ToString();
+            keyMention = user.Mention;
+            keyTypeString = "user";
+        } else if (tableDefinition.CollectionTypeId == (int)CollectionTypesEnum.PerKey)
+        {
+            if (key is null)
+            {
+                await RespondAsync($"{role.Mention} requires a key to be provided.  Please enter a unique key (such as a character name) in the key input.");
+                return;
+            }
+
+            tableKey = key;
+            keyMention = key;
+            keyTypeString = "key";
+        } else
+        {
+            // TODO: log this.
+            await RespondAsync($"Something has gone horribly wrong: unable to determine the collection type of {role.Mention}.");
+            return;
+        }
+
+        string[] keyType = new string[] { "key", "user", "role" };
+        try
+        {
+            _dataAccess.AddRow(tableDefinition.Id, tableKey);
+        } catch (TableDoesNotExistException e)
+        {
+            await RespondAsync($"There is no table associated with the role {role.Mention}.");
+            return;
+        } catch (KeyAlreadyPresentInTableException e)
+        {
+            await RespondAsync($"There is already an instance of the {role.Mention} collection for the {keyTypeString} {keyMention}.");
+            return;
+        }
+
+        await RespondAsync($"You have successfully instantiated a {role.Mention} collection for {keyTypeString} {keyMention}.");
+        return;
+    }
+
+    /// <summary>
+    /// Creating, Updating, and Deleting currencies in a collection.
+    /// </summary>
     [Group("currency", "Currency related commands.")]
     public class CollectionInteractionsCurrency : InteractionModuleBase<SocketInteractionContext>
     {
@@ -48,6 +125,13 @@ public partial class CollectionInteractions
             _dataAccess = dataAccess;
         }
 
+        /// <summary>
+        /// Adds a currency of the given type to the given collection.
+        /// </summary>
+        /// <param name="role">The role id of the collection to add the currency to.</param>
+        /// <param name="dataType">The data type of the currency to add.</param>
+        /// <param name="currencyName">The name of the currency to add.</param>
+        /// <returns></returns>
         [SlashCommand("add", "Add a currency. /collection currency add {Role} {DataType} {Currency Name}")]
         public async Task HandleCollectionCurrencyAddCommand(IRole role, DataTypesEnum dataType, string currencyName)
         {
@@ -72,6 +156,13 @@ public partial class CollectionInteractions
             return;
         }
 
+        /// <summary>
+        /// Deletes a currency from a collection.
+        /// </summary>
+        /// <param name="Role">The role id of the collection to delete the currency from.</param>
+        /// <param name="CurrencyName">The name of the currency to delete.</param>
+        /// <param name="WriteDELETE">Must be "DELETE" in order to confirm deletion.</param>
+        /// <returns></returns>
         [SlashCommand("delete", "Deletes a currency. /collection currency delete {Role} {Currency Name} DELETE")]
         public async Task HandleCollectionCurrencyDeleteCommand(IRole Role, string CurrencyName, string? WriteDELETE = null)
         {
@@ -96,6 +187,13 @@ public partial class CollectionInteractions
             }
         }
 
+        /// <summary>
+        /// Renames a currency in a collection.
+        /// </summary>
+        /// <param name="role">The role id of the collection of the currency to rename.</param>
+        /// <param name="oldCurrencyName">The current name of the currency to rename.</param>
+        /// <param name="newCurrencyName">The new name to set the currency name to.</param>
+        /// <returns></returns>
         [SlashCommand("rename", "Renames a currency. /collection currency {Role} {Old Currency Name} {New Currency Name}")]
         public async Task HandleCollectionCurrencyRenameCommand(IRole role, string oldCurrencyName, string newCurrencyName)
         {

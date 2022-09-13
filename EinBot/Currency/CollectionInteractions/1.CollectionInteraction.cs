@@ -7,7 +7,7 @@ using EinBotDB.DataAccess;
 /// <summary>
 /// This class handles the creation of collections and currencies in them through the Discord API.
 /// </summary>
-[Group("collection", "Commands for creating a new character.  Start with /create-character start")]
+[Group("collection", "Commands for creating, reading, updating, and deleting collections of currencies.")]
 public partial class CollectionInteractions : InteractionModuleBase<SocketInteractionContext>
 {
     IEinDataAccess _dataAccess;
