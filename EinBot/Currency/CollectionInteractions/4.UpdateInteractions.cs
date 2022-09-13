@@ -48,6 +48,7 @@ public partial class CollectionInteractions
     [SlashCommand("instantiate", "Makes a new instance of the currency.")]
     public async Task HandleCollectionInstantiateCommand(IRole role, IUser? user = null, string? key = null)
     {
+        //TODO Not allow instantiation of tables with no columns.
         var tableDefinition = _dataAccess.GetTable(role.Id);
 
         if (tableDefinition is null)
@@ -69,7 +70,7 @@ public partial class CollectionInteractions
         {
             if (user is null)
             {
-                await RespondAsync($"{role.Mention} has a collection type of PerUser.  You must mention a user (@UserName) in the user input in order to instantiate the collection.");
+                await RespondAsync($"{role.Mention} has a collection type of `PerUser`.  You must mention a user (@UserName) in the user input in order to instantiate the collection.");
                 return;
             }
 
