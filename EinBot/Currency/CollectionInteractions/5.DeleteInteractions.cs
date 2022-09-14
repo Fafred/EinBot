@@ -19,7 +19,7 @@ public partial class CollectionInteractions
     {
         if (string.IsNullOrEmpty(WriteDELETE) || !WriteDELETE.ToLower().Trim().Equals("delete"))
         {
-            await RespondAsync("You must write `DELETE` after the role.");
+            await RespondFailureAsync("You must write `DELETE` after the role.");
             return;
         }
 
@@ -27,11 +27,11 @@ public partial class CollectionInteractions
         {
             var table = _dataAccess.DeleteTable(Role.Id);
 
-            await RespondAsync($"You have deleted the `{table.Name}` collection associated with the role {Role.Mention}.");
+            await RespondAsync($"`[Success]` You have deleted the `{table.Name}` collection associated with the role {Role.Mention}.");
             return;
         } catch (TableDoesNotExistException e)
         {
-            await RespondAsync($"There is no table associated with {Role.Mention}.");
+            await RespondFailureAsync($"There is no table associated with {Role.Mention}.");
             return;
         }
     }

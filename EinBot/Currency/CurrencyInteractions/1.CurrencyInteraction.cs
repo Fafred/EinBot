@@ -13,5 +13,13 @@ public partial class CurrencyInteractions : InteractionModuleBase<SocketInteract
         _dataAccess = dataAccess;
     }
 
+    private async Task RespondSuccessAsync(string message, bool ephemeral = false)
+    {
+        await RespondAsync($"```diff\n+[Success]+\n```\n{message}", ephemeral: ephemeral);
+    }
 
+    private async Task RespondFailureAsync(string message, bool ephemeral = false)
+    {
+        await RespondAsync($"```diff\n-[Failure]-\n```\n{message}", ephemeral: ephemeral);
+    }
 }

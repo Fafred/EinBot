@@ -47,15 +47,15 @@ public partial class CollectionInteractions
                 if (tableDefinition is null) throw new NullReferenceException();
             } catch (TableAlreadyExistsException e)
             {
-                await RespondAsync($"There is already a currency assigned to role {role.Mention}.");
+                await RespondAsync($"`[Failure]` There is already a currency assigned to role {role.Mention}.");
                 return;
             } catch (NullReferenceException e)
             {
-                await RespondAsync($"Unable to create currency.");
+                await RespondAsync($"`[Failure]` Unable to create currency.");
                 return;
             }
 
-            await RespondAsync($"Currency {role.Mention} has been created as a {(CollectionTypesEnum)tableDefinition.CollectionTypeId} collection.\n\nPlease wait while attempting to create currencies from the following file:\n```\nFilename: {csvFile.Filename}\nContent type: {csvFile.ContentType}\nProxy URL: {csvFile.Url}\nSize: {csvFile.Size}\n```");
+            await RespondAsync($"`[Success]` Currency {role.Mention} has been created as a {(CollectionTypesEnum)tableDefinition.CollectionTypeId} collection.\n\nPlease wait while attempting to create currencies from the following file:\n```\nFilename: {csvFile.Filename}\nContent type: {csvFile.ContentType}\nProxy URL: {csvFile.Url}\nSize: {csvFile.Size}\n```");
 
             try
             {
@@ -133,7 +133,7 @@ public partial class CollectionInteractions
 
             } catch (Exception e)
             {
-                await FollowupAsync($"Something went wrong. Namely:\n```\n{e.Message}\n```");
+                await FollowupAsync($"`[Failure]` Something went wrong. Namely:\n```\n{e.Message}\n```");
                 return;
             }
         }
@@ -171,12 +171,12 @@ public partial class CollectionInteractions
             }
             catch (TableDoesNotExistException e)
             {
-                await RespondAsync($"There is no collection associated with {role.Mention}.");
+                await RespondAsync($"`[Failure]` There is no collection associated with {role.Mention}.");
                 return;
             }
             catch (ArgumentNullException e)
             {
-                await RespondAsync($"Error: {e.Message}.");
+                await RespondAsync($"`[Failure]` Error: {e.Message}.");
                 return;
             }
         }

@@ -143,6 +143,51 @@ public interface IEinDataAccess
     TableDefinitionsModel DeleteTable(ulong roleId);
 
     /// <summary>
+    /// Retrieves the data of the cell in the given column of the given table.
+    /// </summary>
+    /// <param name="tableName">The name of the table the cell is in.</param>
+    /// <param name="columnName"></param>
+    /// <param name="dataType">OUT the data type associated with the cell.</param>
+    /// <param name="rowNum">Null or the row number of the cell.  Cannot be null if rowKey is null.</param>
+    /// <param name="rowKey">Null or the key associated with the row of the cell.  Cannot be null of rowNum is null.</param>
+    /// <returns>The data in the given cell.</returns>
+    /// <exception cref="InvalidDataException">If unable to determine the cell's data type.</exception>
+    /// <exception cref="TableDoesNotExistException">If the given table does not exist.</exception>
+    /// <exception cref="ColumnDoesNotExistException">If the given table has no column with the given name.</exception>
+    /// <exception cref="CellDoesNotExistException">If there's no cells with the given table, column name, row num, or row key.</exception>
+    public string? GetCellValue(string tableName, string columnName, out DataTypesEnum? dataType, int? rowNum = null, string? rowKey = null);
+
+    /// <summary>
+    /// Retrieves the data of the cell in the given column of the given table.
+    /// </summary>
+    /// <param name="roleId">The id of the role associated with the table the cell is in.</param>
+    /// <param name="columnName"></param>
+    /// <param name="dataType">OUT the data type associated with the cell.</param>
+    /// <param name="rowNum">Null or the row number of the cell.  Cannot be null if rowKey is null.</param>
+    /// <param name="rowKey">Null or the key associated with the row of the cell.  Cannot be null of rowNum is null.</param>
+    /// <returns>The data in the given cell.</returns>
+    /// <exception cref="InvalidDataException">If unable to determine the cell's data type.</exception>
+    /// <exception cref="TableDoesNotExistException">If the given table does not exist.</exception>
+    /// <exception cref="ColumnDoesNotExistException">If the given table has no column with the given name.</exception>
+    /// <exception cref="CellDoesNotExistException">If there's no cells with the given table, column name, row num, or row key.</exception>
+    public string? GetCellValue(ulong roleId, string columnName, out DataTypesEnum? dataType, int? rowNum = null, string? rowKey = null);
+
+    /// <summary>
+    /// Retrieves the data of the cell in the given column of the given table.
+    /// </summary>
+    /// <param name="tableId">The id of the table the cell is in.</param>
+    /// <param name="columnName"></param>
+    /// <param name="dataType">OUT the data type associated with the cell.</param>
+    /// <param name="rowNum">Null or the row number of the cell.  Cannot be null if rowKey is null.</param>
+    /// <param name="rowKey">Null or the key associated with the row of the cell.  Cannot be null of rowNum is null.</param>
+    /// <returns>The data in the given cell.</returns>
+    /// <exception cref="InvalidDataException">If unable to determine the cell's data type.</exception>
+    /// <exception cref="TableDoesNotExistException">If the given table does not exist.</exception>
+    /// <exception cref="ColumnDoesNotExistException">If the given table has no column with the given name.</exception>
+    /// <exception cref="CellDoesNotExistException">If there's no cells with the given table, column name, row num, or row key.</exception>
+    public string? GetCellValue(int tableId, string columnName, out DataTypesEnum? dataType, int? rowNum = null, string? rowKey = null);
+
+    /// <summary>
     /// Retrieves the columns of a table.
     /// </summary>
     /// <param name="tableId">id of table the columns are in.</param>
@@ -220,6 +265,52 @@ public interface IEinDataAccess
     /// <returns>The TableDefinitionsModel of the table.</returns>
     /// <exception cref="TableDoesNotExistException">If a table with the given role id does not exist.</exception>
     public TableDefinitionsModel GetTable(ulong roleId);
+
+
+    /// <summary>
+    /// Modifies the value of the cell.  If numeric type, it will add or subtract the given modifier.  If text, it will simply set the data to the modifier.
+    /// </summary>
+    /// <param name="roleId">The id of the role associated with the table the cell is in.</param>
+    /// <param name="columnName">The name of the column the cell is in.</param>
+    /// <param name="modifier">The modifier to apply to the data.</param>
+    /// <param name="rowNum">Null or the row number of the cell.  Cannot be null if rowKey is null.</param>
+    /// <param name="rowKey">Null or the key associated with the row of the cell.  Cannot be null of rowNum is null.</param>
+    /// <returns></returns>
+    /// <exception cref="InvalidDataException">If the given modifier does not match the cell's data type.</exception>
+    /// <exception cref="TableDoesNotExistException">If the given table does not exist.</exception>
+    /// <exception cref="ColumnDoesNotExistException">If the given table has no column with the given name.</exception>
+    /// <exception cref="CellDoesNotExistException">If there's no cells with the given table, column name, row num, or row key.</exception>
+    public bool ModifyCellValue(ulong roleId, string columnName, string modifier, int? rowNum = null, string? rowKey = null);
+
+    /// <summary>
+    /// Modifies the value of the cell.  If numeric type, it will add or subtract the given modifier.  If text, it will simply set the data to the modifier.
+    /// </summary>
+    /// <param name="tableId">The id of the table the cell is in.</param>
+    /// <param name="columnName">The name of the column the cell is in.</param>
+    /// <param name="modifier">The modifier to apply to the data.</param>
+    /// <param name="rowNum">Null or the row number of the cell.  Cannot be null if rowKey is null.</param>
+    /// <param name="rowKey">Null or the key associated with the row of the cell.  Cannot be null of rowNum is null.</param>
+    /// <returns></returns>
+    /// <exception cref="InvalidDataException">If the given modifier does not match the cell's data type.</exception>
+    /// <exception cref="TableDoesNotExistException">If the given table does not exist.</exception>
+    /// <exception cref="ColumnDoesNotExistException">If the given table has no column with the given name.</exception>
+    /// <exception cref="CellDoesNotExistException">If there's no cells with the given table, column name, row num, or row key.</exception>
+    public bool ModifyCellValue(int tableId, string columnName, string modifier, int? rowNum = null, string? rowKey = null);
+    
+    /// <summary>
+    /// Modifies the value of the cell.  If numeric type, it will add or subtract the given modifier.  If text, it will simply set the data to the modifier.
+    /// </summary>
+    /// <param name="tableName">The name of the table the cell is in.</param>
+    /// <param name="columnName">The name of the column the cell is in.</param>
+    /// <param name="modifier">The modifier to apply to the data.</param>
+    /// <param name="rowNum">Null or the row number of the cell.  Cannot be null if rowKey is null.</param>
+    /// <param name="rowKey">Null or the key associated with the row of the cell.  Cannot be null of rowNum is null.</param>
+    /// <returns></returns>
+    /// <exception cref="InvalidDataException">If the given modifier does not match the cell's data type.</exception>
+    /// <exception cref="TableDoesNotExistException">If the given table does not exist.</exception>
+    /// <exception cref="ColumnDoesNotExistException">If the given table has no column with the given name.</exception>
+    /// <exception cref="CellDoesNotExistException">If there's no cells with the given table, column name, row num, or row key.</exception>
+    public bool ModifyCellValue(string tableName, string columnName, string modifier, int? rowNum = null, string? rowKey = null);
 
     /// <summary>
     /// Renames a column.
@@ -304,6 +395,48 @@ public interface IEinDataAccess
     /// <param name="newRoleId">New role of the table.</param>
     /// <exception cref="TableDoesNotExistException">If the table does not exist.</exception>
     void SetTableRole(ulong oldRoleId, ulong newRoleId);
+
+    /// <summary>
+    /// Sets the value of the cell in the given table and column.
+    /// </summary>
+    /// <param name="tableName">The name of the table the cell is in.</param>
+    /// <param name="columnName">The name of the column the cell is in.</param>
+    /// <param name="data">The data to set the cell to.</param>
+    /// <param name="rowNum">Null or the row number of the cell.  Cannot be null if rowKey is null.</param>
+    /// <param name="rowKey">Null or the key associated with the row of the cell.  Cannot be null of rowNum is null.</param>
+    /// <exception cref="InvalidDataException">If the given modifier does not match the cell's data type.</exception>
+    /// <exception cref="TableDoesNotExistException">If the given table does not exist.</exception>
+    /// <exception cref="ColumnDoesNotExistException">If the given table has no column with the given name.</exception>
+    /// <exception cref="CellDoesNotExistException">If there's no cells with the given table, column name, row num, or row key.</exception>
+    public void SetCellValue(string tableName, string columnName, string data, int? rowNum = null, string? rowKey = null);
+    
+    /// <summary>
+    /// Sets the value of the cell in the given table and column.
+    /// </summary>
+    /// <param name="roleId">The id of the role associated with the table the cell is in.</param>
+    /// <param name="columnName">The name of the column the cell is in.</param>
+    /// <param name="data">The data to set the cell to.</param>
+    /// <param name="rowNum">Null or the row number of the cell.  Cannot be null if rowKey is null.</param>
+    /// <param name="rowKey">Null or the key associated with the row of the cell.  Cannot be null of rowNum is null.</param>
+    /// <exception cref="InvalidDataException">If the given modifier does not match the cell's data type.</exception>
+    /// <exception cref="TableDoesNotExistException">If the given table does not exist.</exception>
+    /// <exception cref="ColumnDoesNotExistException">If the given table has no column with the given name.</exception>
+    /// <exception cref="CellDoesNotExistException">If there's no cells with the given table, column name, row num, or row key.</exception>
+    public void SetCellValue(ulong roleId, string columnName, string data, int? rowNum = null, string? rowKey = null);
+
+    /// <summary>
+    /// Sets the value of the cell in the given table and column.
+    /// </summary>
+    /// <param name="tableId">The id of the table the cell is in.</param>
+    /// <param name="columnName">The name of the column the cell is in.</param>
+    /// <param name="data">The data to set the cell to.</param>
+    /// <param name="rowNum">Null or the row number of the cell.  Cannot be null if rowKey is null.</param>
+    /// <param name="rowKey">Null or the key associated with the row of the cell.  Cannot be null of rowNum is null.</param>
+    /// <exception cref="InvalidDataException">If the given modifier does not match the cell's data type.</exception>
+    /// <exception cref="TableDoesNotExistException">If the given table does not exist.</exception>
+    /// <exception cref="ColumnDoesNotExistException">If the given table has no column with the given name.</exception>
+    /// <exception cref="CellDoesNotExistException">If there's no cells with the given table, column name, row num, or row key.</exception>
+    public void SetCellValue(int tableId, string columnName, string data, int? rowNum = null, string? rowKey = null);
 
     /// <summary>
     /// Updates a row with the given data.

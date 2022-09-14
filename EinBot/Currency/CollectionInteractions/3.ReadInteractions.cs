@@ -24,7 +24,7 @@ public partial class CollectionInteractions
             einTable = _dataAccess.GetEinTable(Role.Id);
         } catch (TableDoesNotExistException e)
         {
-            await RespondAsync($"There is no collection associated with the role {Role.Mention}.");
+            await RespondFailureAsync($"There is no collection associated with the role {Role.Mention}.");
             return;
         }
 
