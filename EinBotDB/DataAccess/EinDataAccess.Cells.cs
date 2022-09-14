@@ -120,6 +120,12 @@ public partial class EinDataAccess
         if (rowNum is null) cells = cells.Where(cell => !string.IsNullOrEmpty(cell.RowKey) && cell.RowKey.Equals(key));
         else cells = cells.Where(cell => cell.RowNum == rowNum);
 
+        if (cells is null || cells.Count() < 1)
+        {
+            if (rowNum is null) throw new InvalidKeyException(tableId, key!);
+            throw new InvalidRowNumException(tableId, (int)rowNum);
+        }
+
         foreach(var cell in cells)
         {
             context.Cells.Remove(cell);

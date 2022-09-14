@@ -96,6 +96,9 @@ public partial class CollectionInteractions
             // Probably could never get here, but just in case between the entrance and now someone has deleted the table.
             await RespondFailureAsync($"There is no table associated with the role {role.Mention}.");
             return;
+        } catch (InvalidKeyException) {
+            await RespondFailureAsync($"{role.Mention} does not have an instanced collection assigned to the {keyType} {keyMention}.");
+            return;
         }
 
         await RespondSuccessAsync($"The {keyType} `{keyMention}` instance of {role.Mention} has been uninstantiated.");

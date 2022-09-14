@@ -64,6 +64,16 @@ public partial class EinDataAccess
         return CreateColumnHelper(tableDefinitions.Id, columnName, dataType, context);
     }
 
+    private ColumnDefinitionsModel? CreateColumnHelper(string columnName, DataTypesEnum dataType, int? tableId = null, ulong? roleId = null, string? tableName = null)
+    {
+        if (tableId is null && roleId is null && tableName is null) return null;
+
+        using var context = _factory.CreateDbContext();
+
+        TableDefinitionsModel? tableDefinition;
+
+    }
+
     /// <summary>
     /// Attempts to delete a column with the given id.
     /// </summary>
