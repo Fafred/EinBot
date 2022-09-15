@@ -6,6 +6,8 @@ public class TableDoesNotExistException : Exception
 {
 	public TableDoesNotExistException() { }
 
+	public TableDoesNotExistException(int? tableId = null, ulong? roleId = null, string? tableName = null) : base($"table {tableId?.ToString() ?? ""}{roleId?.ToString() ?? ""}{tableName ?? ""} does not exist.") { }
+
 	public TableDoesNotExistException(int tableId) : base(tableId.ToString()) { }
 	public TableDoesNotExistException(int tableId, Exception innerException) : base($"table id: {tableId}", innerException) { }
 

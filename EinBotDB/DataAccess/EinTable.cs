@@ -82,6 +82,15 @@ public partial class EinTable
         return sb.ToString();
     }
 
+    public EinRow GetRow(string key)
+    {
+        var row = Rows.FirstOrDefault(r => !string.IsNullOrEmpty(r.Key) && r.Key.Equals(key));
+
+        if (row is null) throw new KeyNotFoundException(key);
+
+        return row;
+    }
+
     private void LoadTable(int tableId, EinDataContext context)
     {
         // First grab the table definition.  This will tell us the table's name and collectin type.
@@ -137,4 +146,5 @@ public partial class EinTable
 
         Rows = einRowsList.ToImmutableList();
     }
+
 }

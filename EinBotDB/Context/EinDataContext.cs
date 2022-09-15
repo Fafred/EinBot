@@ -14,4 +14,7 @@ public class EinDataContext : DbContext
     public DbSet<TableDefinitionsModel> TableDefinitions { get; set; }
     public DbSet<ColumnDefinitionsModel> ColumnDefinitions { get; set; }
     public DbSet<CellsModel> Cells { get; set; }
+
+    public DbSet<EinEmbedPartsModel> EinEmbedParts { get; set; }
+    public DbSet<EmbedPartTypesModel> EmbedPartTypes { get; set; }
 }

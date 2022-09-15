@@ -38,4 +38,8 @@
     <ProjectReference Include="..\EinBotDB\EinBotDB.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="General\Extensions\" />
+  </ItemGroup>
+
 </Project>

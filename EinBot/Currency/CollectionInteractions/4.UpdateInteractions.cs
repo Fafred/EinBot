@@ -101,7 +101,7 @@ public partial class CollectionInteractions
             return;
         }
 
-        await RespondSuccessAsync($"The {keyType} `{keyMention}` instance of {role.Mention} has been uninstantiated.");
+        await RespondSuccessAsync($"The {keyType} {keyMention} instance of {role.Mention} has been uninstantiated.");
     }
 
     /// <summary>

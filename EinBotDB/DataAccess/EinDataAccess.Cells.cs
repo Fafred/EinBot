@@ -469,6 +469,9 @@ public partial class EinDataAccess
                 int intVal;
                 int intModifier;
 
+                if (string.IsNullOrEmpty(data)) data = "0";
+                if (string.IsNullOrEmpty(modifier)) modifier = "0";
+
                 if (!int.TryParse(data, out intVal) || !int.TryParse(modifier, out intModifier)) return false;
 
                 cellsModel.Data = (intVal + intModifier).ToString();
@@ -477,6 +480,9 @@ public partial class EinDataAccess
             case DataTypesEnum.ListDecimal:
                 double decimalVal;
                 double decimalModifier;
+
+                if (string.IsNullOrEmpty(data)) data = "0";
+                if (string.IsNullOrEmpty (modifier)) modifier = "0";
 
                 if (!double.TryParse(data, out decimalVal) || !double.TryParse(modifier, out decimalModifier)) return false;
 
@@ -490,6 +496,9 @@ public partial class EinDataAccess
             case DataTypesEnum.ListChannelId:
                 ulong ulongVal;
                 ulong ulongModifier;
+
+                if (string.IsNullOrEmpty(data)) data = "0";
+                if (string.IsNullOrEmpty(modifier)) modifier = "0";
 
                 if (!ulong.TryParse(data, out ulongVal) || !ulong.TryParse(modifier, out ulongModifier)) return false;
 

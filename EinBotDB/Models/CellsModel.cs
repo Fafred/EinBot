@@ -8,10 +8,10 @@ public class CellsModel
     public int Id { get; set; }
     
     public int TableDefinitionsId { get; set; }
-    public TableDefinitionsModel TableDefinitions { get; set; }
+    public virtual TableDefinitionsModel TableDefinitions { get; set; }
 
     public int ColumnDefinitionsId { get; set; }
-    public ColumnDefinitionsModel ColumnDefinitions { get; set; }
+    public virtual ColumnDefinitionsModel ColumnDefinitions { get; set; }
 
     public int RowNum { get; set; }
 

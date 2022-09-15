@@ -1,6 +1,7 @@
 ﻿namespace EinBotDB.DataAccess;
 
 using System.Linq;
+using System.Security.Cryptography;
 using EinBotDB.Context;
 using EinBotDB.Models;
 
@@ -18,8 +19,7 @@ public partial class EinDataAccess
     /// <exception cref="ColumnAlreadyExistsException">If there is already a column with that name in the given table.</exception>
     public ColumnDefinitionsModel? CreateColumn(int tableId, string columnName, DataTypesEnum dataType)
     {
-        using var context = _factory.CreateDbContext();
-        return CreateColumnHelper(tableId, columnName, dataType, context);
+        return CreateColumnHelper(columnName, dataType, tableId: tableId);
     }
 
     /// <summary>
@@ -34,13 +34,7 @@ public partial class EinDataAccess
     /// <exception cref="ColumnAlreadyExistsException">If there is already a column with that name in the given table.</exception>
     public ColumnDefinitionsModel? CreateColumn(string tableName, string columnName, DataTypesEnum dataType)
     {
-        using var context = _factory.CreateDbContext();
-
-        TableDefinitionsModel? tableDefinitions = context.TableDefinitions.FirstOrDefault(x => x.Name == tableName);
-
-        if (tableDefinitions is null) throw new TableDoesNotExistException(tableName);
-
-        return CreateColumnHelper(tableDefinitions.Id, columnName, dataType, context);
+        return CreateColumnHelper(columnName, dataType, tableName: tableName);
     }
 
     /// <summary>
@@ -55,23 +49,7 @@ public partial class EinDataAccess
     /// <exception cref="ColumnAlreadyExistsException">If there is already a column with that name in the given table.</exception>
     public ColumnDefinitionsModel? CreateColumn(ulong roleId, string columnName, DataTypesEnum dataType)
     {
-        using var context = _factory.CreateDbContext();
-
-        TableDefinitionsModel? tableDefinitions = context.TableDefinitions.FirstOrDefault(x => x.RoleId == roleId);
-
-        if (tableDefinitions is null) throw new TableDoesNotExistException(roleId);
-
-        return CreateColumnHelper(tableDefinitions.Id, columnName, dataType, context);
-    }
-
-    private ColumnDefinitionsModel? CreateColumnHelper(string columnName, DataTypesEnum dataType, int? tableId = null, ulong? roleId = null, string? tableName = null)
-    {
-        if (tableId is null && roleId is null && tableName is null) return null;
-
-        using var context = _factory.CreateDbContext();
-
-        TableDefinitionsModel? tableDefinition;
-
+        return CreateColumnHelper(columnName, dataType, roleId: roleId);
     }
 
     /// <summary>
@@ -318,24 +296,40 @@ public partial class EinDataAccess
         return RenameColumnHelper(tableDefinition.Id, oldColumnName, newColumnName, context);
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////
-    ///                                         PRIVATE METHODS.                                         ///
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     /// <summary>
-    /// Helper method for creating columns.
+    /// A helper method for creating columns.  If there are already rows in the cells table for the table this column is going in, it will create
+    /// new cells for the new column for each existing row in that table.
     /// </summary>
-    /// <param name="tableId">The id of the table this column should be placed in.</param>
-    /// <param name="columnName">The name of the column.  Everything other than alpha-numerics and '-' chars are stripped out.</param>
-    /// <param name="dataType">The type of data stored in this column</param>
-    /// <param name="context">The database context</param>
-    /// <returns>A ColumnDefinitionModel entity returned by the db context.</returns>
+    /// <param name="columnName">The name of the column to create.</param>
+    /// <param name="dataType">The data type of the column.</param>
+    /// <param name="tableId">Null or the id of the table to create the column in.  If null, then either roleId or tableName cannot be null.</param>
+    /// <param name="roleId">Null or the role id of the table to create the column in.  If null, then either tableId or tableName cannot be null.</param>
+    /// <param name="tableName">Null or the table name of the table to create the column in.  If null then either tableId or roleId cannot be null.</param>
+    /// <returns>A ColumnDefinitionsModel of the new column.</returns>
     /// <exception cref="TableDoesNotExistException">If the table the column was to be added to does not exist.</exception>
     /// <exception cref="InvalidNameException">If the name of the column is invalid.</exception>
     /// <exception cref="ColumnAlreadyExistsException">If there is already a column with that name in the given table.</exception>
-    private ColumnDefinitionsModel? CreateColumnHelper(int tableId, string columnName, DataTypesEnum dataType, EinDataContext context)
+    private ColumnDefinitionsModel? CreateColumnHelper(string columnName, DataTypesEnum dataType, int? tableId = null, ulong? roleId = null, string? tableName = null)
     {
-        if (context.TableDefinitions.FirstOrDefault(x => x.Id == tableId) == null) throw new TableDoesNotExistException(tableId);
+        if (tableId is null && roleId is null && tableName is null) return null;
+
+        using var context = _factory.CreateDbContext();
+
+        TableDefinitionsModel? tableDefinition;
+        Func<TableDefinitionsModel, bool> tableSearchFunc;
+
+        if (tableId is not null) tableSearchFunc = (table => table.Id == tableId);
+        else if (roleId is not null) tableSearchFunc = (table => table.RoleId == roleId);
+        else tableSearchFunc = (table => table.Name.Equals(tableName));
+
+        tableDefinition = context.TableDefinitions.FirstOrDefault(tableSearchFunc);
+
+        if (tableDefinition is null) throw new TableDoesNotExistException(tableId: tableId, roleId: roleId, tableName: tableName);
+
+        tableId = tableDefinition.Id;
+        roleId = tableDefinition.RoleId;
+        tableName = tableDefinition.Name;
 
         // Strip unacceptable characters.
         var name = columnName.ToAlphaNumericDash();
@@ -346,17 +340,38 @@ public partial class EinDataAccess
                            where column.TableDefinitionsId == tableId
                            select column.Name).ToList();
 
-        if (columnNames.Contains(name)) throw new ColumnAlreadyExistsException(tableId, name);
+        if (columnNames.Contains(name)) throw new ColumnAlreadyExistsException((int)tableId, name);
 
-
+        // Now create the column.
         ColumnDefinitionsModel columnDefinitionsModel = new ColumnDefinitionsModel()
         {
             Name = name,
-            TableDefinitionsId = tableId,
+            TableDefinitionsId = (int)tableId,
             DataTypesId = (int)dataType,
         };
 
         columnDefinitionsModel = context.ColumnDefinitions.Add(columnDefinitionsModel).Entity;
+        context.SaveChanges();
+
+        // Now we go through and check if there are already rows in the Cells table for this table.
+        var cellRows = (from cell in context.Cells
+                        where cell.TableDefinitionsId == tableId
+                        select new { cell.RowNum, cell.RowKey }).Distinct();
+
+        foreach(var cellData in cellRows)
+        {
+            CellsModel cellsModel = new CellsModel()
+            {
+                TableDefinitionsId = tableDefinition.Id,
+                ColumnDefinitionsId = columnDefinitionsModel.Id,
+                RowKey = cellData.RowKey,
+                RowNum = cellData.RowNum,
+                Data = "",
+            };
+
+            context.Cells.Add(cellsModel);
+        }
+
         context.SaveChanges();
 
         return columnDefinitionsModel;

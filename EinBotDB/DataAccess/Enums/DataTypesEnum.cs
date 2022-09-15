@@ -14,4 +14,6 @@ public enum DataTypesEnum
     ListUserId,
     ListGuildId,
     ListChannelId,
+    RoleId,
+    ListRoleId
 }

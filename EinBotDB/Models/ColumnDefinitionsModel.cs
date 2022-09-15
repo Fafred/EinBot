@@ -9,10 +9,10 @@ public class ColumnDefinitionsModel
     public int Id { get; set; }
 
     public int TableDefinitionsId { get; set; }
-    public TableDefinitionsModel TableDefinitions { get; set; }
+    public virtual TableDefinitionsModel TableDefinitions { get; set; }
 
     public int DataTypesId { get; set; }
-    public DataTypesModel DataTypes { get; set; }
+    public virtual DataTypesModel DataTypes { get; set; }
 
     public string Name { get; set; }
 

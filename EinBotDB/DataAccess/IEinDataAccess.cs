@@ -5,6 +5,11 @@ using System.Collections.Generic;
 
 public interface IEinDataAccess
 {
+    public int AddEmbedPart(EmbedPartsEnum embedPart,
+        string Data01, string? Data02 = null, string? Data03 = null,
+        int? tableId = null, ulong? roleId = null, string? tableName = null,
+        int? sequence = null);
+
     /// <summary>
     /// Add a row to a table.
     /// </summary>
@@ -242,6 +247,12 @@ public interface IEinDataAccess
     /// <exception cref="TableDoesNotExistException">If there's no table with the given role id.</exception>
     EinTable GetEinTable(ulong roleId);
 
+    public int GetEmbedPartSequence(int embedPartId);
+
+    public EinEmbedPartsModel? GetEmbedPart(int embedPartId, int? tableId = null, ulong? roleId = null, string? tableName = null);
+
+    public List<EinEmbedPartsModel>? GetEmbedParts(int? tableId = null, ulong? roleId = null, string? tableName = null);
+
     /// <summary>
     /// Retrieves a table with the given name.
     /// </summary>
@@ -387,6 +398,12 @@ public interface IEinDataAccess
     /// <exception cref="InvalidNameException">Thrown if the the table name is invalid.</exception>
     /// <exception cref="TableDoesNotExistException">If the table does not exist.</exception>
     string RenameTable(ulong roleId, string newTableName);
+
+    public void RemoveEmbedPart(int embedPartId);
+
+    public void SetEmbedPartData(int embedPartId, int dataSeq, string data);
+
+    public void SetEmbedPartSequence(int embedPartId, int newSequenceNum);
 
     /// <summary>
     /// Changes the role associated with a table.

@@ -15,13 +15,14 @@ public partial class CurrencyInteractions
         TableDefinitionsModel? tableDefinition;
         ColumnDefinitionsModel? columnDefinition;
         string key;
+        string keyMention;
         string collectionType;
 
         try
         {
-            ValidateInput(role, currencyName, 
+            ValidateInput(role, currencyName,
                 out tableDefinition, out columnDefinition,
-                out key, out collectionType,
+                out key, out collectionType, out keyMention,
                 user: user, collectionKey: currencyKey);
         } catch (TableDoesNotExistException)
         {
@@ -63,7 +64,7 @@ public partial class CurrencyInteractions
             return;
         }
 
-        await RespondSuccessAsync($"{role.Mention} {currencyName} has been set to `{setValue}` for {collectionType} {key}.");
+        await RespondSuccessAsync($"{role.Mention} {currencyName} has been set to `{setValue}` for {collectionType} {keyMention}.");
     }
 
     [SlashCommand("modify", "Modifies the value of a currency.")]
@@ -72,13 +73,14 @@ public partial class CurrencyInteractions
         TableDefinitionsModel? tableDefinition;
         ColumnDefinitionsModel? columnDefinition;
         string key;
+        string keyMention;
         string collectionType;
 
         try
         {
             ValidateInput(role, currencyName,
                 out tableDefinition, out columnDefinition,
-                out key, out collectionType,
+                out key, out collectionType, out keyMention,
                 user: user, collectionKey: currencyKey);
         }
         catch (TableDoesNotExistException)
@@ -102,10 +104,18 @@ public partial class CurrencyInteractions
             return;
         }
 
+        string? oldValue;
+        string? newValue;
         // Attempt to set the value.
         try
         {
+            oldValue = _dataAccess.GetCellValue(tableDefinition!.Id, columnDefinition!.Name, out _, rowKey: key);
+
+            if (string.IsNullOrEmpty(oldValue)) oldValue = "[NO VALUE]";
+
             _dataAccess.ModifyCellValue(tableDefinition!.Id, columnDefinition!.Name, modifyValue, rowKey: key);
+
+            newValue = _dataAccess.GetCellValue(tableDefinition!.Id, columnDefinition!.Name, out _, rowKey: key);
         }
         catch (InvalidDataException e)
         {
@@ -128,12 +138,13 @@ public partial class CurrencyInteractions
             return;
         }
 
-        await RespondSuccessAsync($"{role.Mention} {currencyName} has been modified by `{modifyValue}` for {collectionType} {key}.");
+        await RespondSuccessAsync($"{role.Mention} {currencyName} for {collectionType} {keyMention} has been modified by `{modifyValue}`.  It went from `{oldValue}` to `{newValue}`.");
     }
 
     private void ValidateInput(IRole role, string currencyName,
                             out TableDefinitionsModel? tableDefinition, out ColumnDefinitionsModel? columnDefinition,
                             out string key, out string collectionType,
+                            out string keyMention,
                              IUser? user = null, string? collectionKey = null)
     {
         tableDefinition = _dataAccess.GetTable(role.Id);
@@ -149,10 +160,13 @@ public partial class CurrencyInteractions
         if (columnDefinition is null) throw new ColumnDoesNotExistException("");
 
         key = collectionKey ?? "";
+        keyMention = key;
         collectionType = "key";
+
         if (tableDefinition.CollectionTypeId == (int)CollectionTypesEnum.PerRole)
         {
             key = role.Id.ToString();
+            keyMention = role.Mention;
             collectionType = "role";
         }
         else if (tableDefinition.CollectionTypeId == (int)CollectionTypesEnum.PerUser)
@@ -160,6 +174,7 @@ public partial class CurrencyInteractions
             if (user is null) throw new CollectionTypeIsPerUserException();
 
             key = user.Id.ToString();
+            keyMention = user.Mention;
             collectionType = "user";
         }
         else if (tableDefinition.CollectionTypeId == (int)CollectionTypesEnum.PerKey)

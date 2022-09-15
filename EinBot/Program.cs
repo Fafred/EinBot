@@ -19,7 +19,7 @@ public partial class Program
     /// </summary>
     public static IServiceProvider ServiceProvider { get; private set; }
 
-    public static Task Main() => new Program().MainAsync();
+    public static Task Main() => /*new Program().Testing();*/ new Program().MainAsync();
 
     /// <summary>
     /// The app loop.  Sets up host configuration, connects services, and then starts the client.

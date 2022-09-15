@@ -21,4 +21,6 @@ public class TableDefinitionsModel
     public virtual ICollection<CellsModel> Cells { get; set; }
 
     public virtual ICollection<ColumnDefinitionsModel> ColumnDefinitions { get; set; }
+
+    public virtual ICollection<EinEmbedPartsModel> EinEmbedParts { get; set; }
 }

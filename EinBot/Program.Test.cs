@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 using EinBotDB.Context;
 using EinBotDB.DataAccess;
-
+using EinBotDB.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -33,29 +33,29 @@ public partial class Program
 
         var dal = ServiceProvider.GetRequiredService<EinDataAccess>();
 
+        ulong testRoleId = 1019855692577898526;
+        var tableDefinition = dal.CreateTable("EmbedTest", CollectionTypesEnum.PerRole, testRoleId);
+        //var tableDefinition = dal.GetTable(testRoleId);
+        var tableId = tableDefinition.Id;
 
-        Dictionary<string, string> columnsDataDict = new Dictionary<string, string>()
+        var titleId = dal.AddEmbedPart(EinBotDB.EmbedPartsEnum.Title, "Test Title", tableId: tableId);
+        var descId = dal.AddEmbedPart(EinBotDB.EmbedPartsEnum.Description, "Test description", tableId: tableId);
+        var field1Id = dal.AddEmbedPart(EinBotDB.EmbedPartsEnum.Field, "Field 1", Data03: "true", tableId: tableId);
+        var field2Id = dal.AddEmbedPart(EinBotDB.EmbedPartsEnum.Field, "Field 2", Data03: "true", tableId: tableId);
+        var field3Id = dal.AddEmbedPart(EinBotDB.EmbedPartsEnum.Field, "Field 3", Data03: "false", tableId: tableId);
+
+        var idList = new List<int> { titleId, descId, field1Id, field2Id, field3Id };
+
+        var field1Seq = dal.GetEmbedPartSequence(field1Id);
+        dal.SetEmbedPartSequence(field3Id, field1Seq);
+        dal.SetEmbedPartSequence(field1Id, field1Seq + 2);
+
+        foreach(var embedPart in dal.GetEmbedParts(tableId: tableId) ?? new List<EinEmbedPartsModel>())
         {
-            {"WholeNumber", "100"},
-            {"TextField", "This is a new text field." },
-            {"ListOfStrings", "One element in a list." }
-        };
-
-        dal.CreateTable("GoldTable", CollectionTypesEnum.PerKey, (ulong)Random.Shared.Next());
-        dal.CreateColumn(2, "Gold", DataTypesEnum.Int);
-
-        dal.AddRow(2, "SoAndSo", new Dictionary<string, string>() { { "Gold", "41" } });
-
-        var table = dal.GetEinTable(2);
-
-        foreach (var row in table.Rows)
-        {
-            Console.WriteLine(row);
+            Console.WriteLine($"id: {embedPart.Id}\t seq: {embedPart.Sequence}\t data: {embedPart.Data01}");
         }
 
-
-        Console.WriteLine("---");
-
+        dal.DeleteTable(tableId);
 
         await Task.Delay(-1);
     }
