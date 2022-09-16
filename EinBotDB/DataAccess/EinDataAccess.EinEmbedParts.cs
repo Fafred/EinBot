@@ -114,6 +114,18 @@ public partial class EinDataAccess
         return partsList;
     }
 
+    public void RemoveAllEmbedParts(int? tableId = null, ulong? roleId = null, string? tableName = null)
+    {
+        using var context = _factory.CreateDbContext();
+
+        var tableDefinition = GetTableHelper(context, tableId: tableId, roleId: roleId, tableName: tableName);
+
+        var partsList = context.EinEmbedParts.Where(part => part.TableDefinitionsId == tableDefinition.Id);
+        context.EinEmbedParts.RemoveRange(partsList);
+
+        context.SaveChanges();
+    }
+
     public void RemoveEmbedPart(int embedPartId)
     {
         using var context = _factory.CreateDbContext();

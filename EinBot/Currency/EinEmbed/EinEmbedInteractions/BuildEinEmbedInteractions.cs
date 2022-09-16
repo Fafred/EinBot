@@ -17,10 +17,132 @@ public partial class BuildEinEmbedInteractions : InteractionModuleBase<SocketInt
         _dataAccess = dataAccess;
     }
 
+    [SlashCommand("add", "Adds a part to the display of the given collection.")]
+    public async Task HandleBuildAddCommand(IRole role, EmbedPartsEnum partType, string data01, string? data02 = null, string? data03 = null)
+    {
+        if(string.IsNullOrEmpty(data01))
+        {
+            await RespondFailureAsync("You must include data in at least the first data slot.");
+            return;
+        }
+
+        TableDefinitionsModel tableDefinition;
+
+        try
+        {
+            tableDefinition = _dataAccess.GetTable(role.Id);
+        } catch (TableDoesNotExistException)
+        {
+            await RespondFailureAsync($"There is no collection associated with the role {role.Mention}.");
+            return;
+        }
+
+        var partId = _dataAccess.AddEmbedPart(partType, data01, Data02: data02, Data03: data03, tableId: tableDefinition.Id);
+
+        await RespondSuccessAsync($"You have successfully added {partType}[id: {partId}] to the display of {role.Mention}.");
+    }
+
+    [SlashCommand("data", "Sets the data fields for one of the embed parts.")]
+    public async Task HandleBuildDataCommand(IRole role, int partId, string? data01 = null, string? data02 = null, string? data03 = null)
+    {
+        if(data01 is null && data02 is null && data03 is null)
+        {
+            await RespondFailureAsync($"No new data provided. No changes were made.");
+            return;
+        }
+
+        TableDefinitionsModel tableDefinition;
+
+        try
+        {
+            tableDefinition = _dataAccess.GetTable(role.Id);
+        } catch (TableDoesNotExistException)
+        {
+            await RespondFailureAsync($"There is no collection associated with {role.Mention}.");
+            return;
+        }
+
+        EinEmbedPartsModel? embedPart;
+
+        try
+        {
+            embedPart = _dataAccess.GetEmbedPart(partId, roleId: role.Id);
+        } catch (EinEmbedPartDoesNotExistException)
+        {
+            await RespondFailureAsync($"There is no embed part with id {partId} in the {role.Mention} collection.");
+            return;
+        }
+
+        StringBuilder stringBuilder = new StringBuilder();
+        if (data01 is not null)
+        {
+            if (data01.Equals("{DELETE}"))
+            {
+                data01 = "";
+            }
+
+            _dataAccess.SetEmbedPartData(embedPart!.Id, 1, data01);
+
+            if (string.IsNullOrEmpty(data01)) data01 = "[NULL]";
+
+            stringBuilder.Append($"\n........Data 1 set to `{data01}`.");
+        }
+        if (data02 is not null)
+        {
+            if (data02.Equals("{DELETE}"))
+            {
+                data02 = "";
+            }
+
+            _dataAccess.SetEmbedPartData(embedPart!.Id, 2, data02);
+
+            if (string.IsNullOrEmpty(data02)) data02 = "[NULL]";
+
+            stringBuilder.Append($"\n........Data 2 set to `{data02}`.");
+        }
+        if (data03 is not null)
+        {
+            if (data03.Equals("{DELETE}"))
+            {
+                data03 = "";
+            }
+
+            _dataAccess.SetEmbedPartData(embedPart!.Id, 3, data03);
+
+            if (string.IsNullOrEmpty(data03)) data03 = "[NULL]";
+
+            stringBuilder.Append($"\n........Data 3 set to `{data03}`.");
+        }
+
+        await RespondSuccessAsync($"You have made the following changes to the {role.Mention} display part {(EmbedPartsEnum)embedPart!.EmbedPartTypesId}[id {partId}]:{stringBuilder.ToString()}");
+        return;
+    }
+
+    [SlashCommand("delete", "Deletes a collection's display.  Must write DELETE in the write-delete prompt to confirm.")]
+    public async Task HandleBuildDeleteCommand(IRole role, string? writeDelete = null)
+    {
+        if (string.IsNullOrEmpty(writeDelete) || !writeDelete!.Equals("DELETE"))
+        {
+            await RespondFailureAsync($"You must write `DELETE` in the proper prompt to confirm deletion.");
+            return;
+        }
+
+        try
+        {
+            _dataAccess.RemoveAllEmbedParts(roleId: role.Id);
+        } catch (TableDoesNotExistException)
+        {
+            await RespondFailureAsync($"There is no collection associated with the role {role.Mention}.");
+            return;
+        }
+
+        await RespondSuccessAsync($"Any existing display parts for collection {role.Mention} have been removed.");
+    }
+
     [SlashCommand("info", "Displays info about a custom display for a collection.")]
     public async Task HandleBuildInfoCommand(IRole role)
     {
-        Embed embed = GetInfoDisplay(role).Result;
+        Embed? embed = GetInfoDisplay(role);
 
         if (embed is null)
         {
@@ -29,6 +151,41 @@ public partial class BuildEinEmbedInteractions : InteractionModuleBase<SocketInt
         }
 
         await RespondAsync(embed: embed);
+    }
+
+    [SlashCommand("remove", "Removes a display part from a collection display.")]
+    public async Task HandleBuildRemoveCommand(IRole role, int partId, string? writeDelete = null)
+    {
+        if (string.IsNullOrEmpty(writeDelete) || !writeDelete!.Equals("DELETE"))
+        {
+            await RespondFailureAsync($"You must write `DELETE` in the proper prompt to confirm deletion.");
+            return;
+        }
+
+        TableDefinitionsModel tableDefinition;
+
+        try
+        {
+            tableDefinition = _dataAccess.GetTable(role.Id);
+        } catch (TableDoesNotExistException)
+        {
+            await RespondFailureAsync($"No collection is associated with {role.Mention}.");
+            return;
+        }
+
+        EinEmbedPartsModel einEmbedPart;
+
+        try
+        {
+            einEmbedPart = _dataAccess.GetEmbedPart(partId, tableId: tableDefinition.Id)!;
+        } catch (EinEmbedPartDoesNotExistException)
+        {
+            await RespondFailureAsync($"{role.Mention} collection display does not have a display part with id `{partId}`.");
+            return;
+        }
+
+        _dataAccess.RemoveEmbedPart(einEmbedPart!.Id);
+        await RespondSuccessAsync($"You have removed {(EmbedPartsEnum)einEmbedPart.EmbedPartTypesId}[id: {partId}] from the display of {role.Mention}.");
     }
 
     [SlashCommand("sequence", "Changes the sequence of a part in the display for the given role.")]
@@ -64,7 +221,7 @@ public partial class BuildEinEmbedInteractions : InteractionModuleBase<SocketInt
         await RespondSuccessAsync($"Moved the embed part with id {partId} to sequence # {newSequenceNumber}.");
     }
 
-    private async Task<Embed> GetInfoDisplay(IRole role)
+    private Embed? GetInfoDisplay(IRole role)
     {
 
         var tableDefinition = _dataAccess.GetTable(role.Id);

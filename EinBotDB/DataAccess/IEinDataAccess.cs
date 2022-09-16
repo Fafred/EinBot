@@ -399,6 +399,8 @@ public interface IEinDataAccess
     /// <exception cref="TableDoesNotExistException">If the table does not exist.</exception>
     string RenameTable(ulong roleId, string newTableName);
 
+    public void RemoveAllEmbedParts(int? tableId = null, ulong? roleId = null, string? tableName = null);
+
     public void RemoveEmbedPart(int embedPartId);
 
     public void SetEmbedPartData(int embedPartId, int dataSeq, string data);
