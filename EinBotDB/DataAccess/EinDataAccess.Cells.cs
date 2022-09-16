@@ -251,6 +251,13 @@ public partial class EinDataAccess
         return GetCellValueHelper(columnName, out dataType, tableId: tableId, rowNum: rowNum, rowKey: rowKey);
     }
 
+    public string? GetCellValue(string columnName, out DataTypesEnum? dataType,
+                                int? tableId = null, ulong? roleId = null, string? tableName = null,
+                                int? rowNum, string? rowKey = null)
+    {
+
+    }
+
     /// <summary>
     /// Sets the value of the cell in the given table and column.
     /// </summary>

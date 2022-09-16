@@ -6,6 +6,7 @@ using EinBotDB.Models;
 
 public partial class EinDataAccess
 {
+
     public int AddEmbedPart(EmbedPartsEnum embedPart, 
         string Data01, string? Data02 = null, string? Data03 = null,
         int? tableId = null, ulong? roleId = null, string? tableName = null,

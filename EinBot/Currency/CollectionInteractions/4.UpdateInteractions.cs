@@ -5,9 +5,6 @@ using Discord;
 using Discord.Interactions;
 using EinBotDB.DataAccess;
 using EinBotDB;
-using EinBotDB.Models;
-using System.Data;
-using Microsoft.EntityFrameworkCore.Query;
 
 public partial class CollectionInteractions
 {

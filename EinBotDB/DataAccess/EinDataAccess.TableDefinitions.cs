@@ -2,7 +2,6 @@
 
 using EinBotDB.Context;
 using EinBotDB.Models;
-using System.Security.Cryptography.X509Certificates;
 
 public partial class EinDataAccess
 {
@@ -15,21 +14,21 @@ public partial class EinDataAccess
     /// <returns>The TableDefinitionsModel entity of the created table.</returns>
     /// <exception cref="InvalidNameException"></exception>
     /// <exception cref="TableAlreadyExistsException"></exception>"
+    /// /// <exception cref="TableAlreadyExistsWithRoleException"></exception>"
+    /// /// <exception cref="TableAlreadyExistsWithNameException"></exception>"
     public TableDefinitionsModel? CreateTable(string tableName, CollectionTypesEnum collectionType, ulong roleId)
     {
         using var context = _factory.CreateDbContext();
 
-        var name = tableName.ToAlphaNumericDash().Trim();
+        if (string.IsNullOrEmpty(tableName)) throw new InvalidNameException(tableName);
 
-        if (string.IsNullOrEmpty(name)) throw new InvalidNameException($"Table name: {tableName}");
-
-        if (context.TableDefinitions.FirstOrDefault(table => table.RoleId == roleId) is not null) throw new TableAlreadyExistsException(roleId);
-        if (context.TableDefinitions.FirstOrDefault(table => table.Name.Equals(tableName)) is not null) throw new TableAlreadyExistsException(tableName);
+        if (InternalDoesTableExist(context, roleId: roleId)) throw new TableAlreadyExistsWithRoleException(roleId);
+        if (InternalDoesTableExist(context, tableName: tableName)) throw new TableAlreadyExistsWithNameException(tableName);
 
 
         TableDefinitionsModel tableDefinition = new TableDefinitionsModel()
         {
-            Name = name,
+            Name = tableName,
             CollectionTypeId = (int)collectionType,
             RoleId = roleId
         };
@@ -39,6 +38,7 @@ public partial class EinDataAccess
         return tableDefinition;
     }
 
+    /*
     /// <summary>
     /// Removes the table with the given table id.
     /// </summary>
@@ -97,8 +97,43 @@ public partial class EinDataAccess
         context.SaveChanges();
 
         return tableDefinition;
+    }*/
+
+    public TableDefinitionsModel DeleteTable(int? tableId = null, ulong? roleId = null, string? tableName = null)
+    {
+        using var context = _factory.CreateDbContext();
+
+        TableDefinitionsModel tableDefinition = InternalGetTable(context, tableId: tableId, roleId: roleId, tableName: tableName);
+
+        tableDefinition = context.TableDefinitions.Remove(tableDefinition).Entity;
+        context.SaveChanges();
+        return tableDefinition;
     }
 
+    /// <summary>
+    /// Retrieves a table with the given tableId, roleId, or tableName.
+    /// </summary>
+    /// <param name="tableId">Null or the id of the table.  If null, then either roleId or tableName cannot be null.</param>
+    /// <param name="roleId">Null or the role id of the table.  If null, then either roleId or tableName cannot be null.</param>
+    /// <param name="tableName">Null or the name of the table.  If null, then either roleId or tableId cannot be null.</param>
+    /// <returns>A TableDefinitionsModel of the table.</returns>
+    /// <exception cref="TableDoesNotExistException">If all arguments are null, or if a table cannot be found with the given argument.</exception>
+    public TableDefinitionsModel GetTable(int? tableId = null, ulong? roleId = null, string? tableName = null)
+    {
+        using var context = _factory.CreateDbContext();
+
+        return InternalGetTable(context, tableId: tableId, roleId: roleId, tableName: tableName);
+    }
+
+    public bool DoesTableExist(int? tableId = null, ulong? roleId = null, string? tableName = null)
+    {
+        using var context = _factory.CreateDbContext();
+
+        return InternalDoesTableExist(context, tableId: tableId, roleId: roleId, tableName: tableName);
+    }
+
+
+    /*
     /// <summary>
     /// Retrieves a table with the given name.
     /// </summary>
@@ -115,6 +150,8 @@ public partial class EinDataAccess
 
         return tableDefinition;
     }
+    
+
 
     /// <summary>
     /// Retrieves a table with the given role id.
@@ -149,7 +186,9 @@ public partial class EinDataAccess
 
         return tableDefinition;
     }
+    */
 
+    /*
     /// <summary>
     /// Rename a table.
     /// </summary>
@@ -233,52 +272,128 @@ public partial class EinDataAccess
 
         return oldName;
     }
+    */
 
-    public void SetTableRole(ulong oldRoleId, ulong newRoleId)
+    /// <summary>
+    /// Sets a table's name.  The name must be unique to this table.
+    /// </summary>
+    /// <param name="newTableName">The new name of the table.  Must be unique.</param>
+    /// <param name="tableId">Null or the id of the table.  If null, then either roleId or tableName cannot be null.</param>
+    /// <param name="roleId">Null or the role id of the table.  If null, then either roleId or tableName cannot be null.</param>
+    /// <param name="tableName">Null or the name of the table.  If null, then either roleId or tableId cannot be null.</param>
+    /// <returns>[string] The old name of the table.</returns>
+    /// <exception cref="InvalidNameException">If the given name is invalid.</exception>
+    /// <exception cref="TableAlreadyExistsWithNameException">If there is already a table with that name in existance.</exception>
+    /// <exception cref="TableDoesNotExistException">If all arguments are null, or if a table cannot be found with the given argument.</exception>
+    public string RenameTable(string newTableName,
+        int? tableId = null, ulong? roleId = null, string? tableName = null)
+    {
+        if (string.IsNullOrEmpty(newTableName)) throw new InvalidNameException($"Table names cannot be blank or null.");
+        
+        using var context = _factory.CreateDbContext();
+        
+        if (InternalDoesTableExist(context, tableName: newTableName)) throw new TableAlreadyExistsWithNameException(newTableName);
+
+        TableDefinitionsModel tableDefinition = InternalGetTable(context, tableId: tableId, roleId: roleId, tableName: tableName);
+
+        string oldName = tableDefinition.Name;
+        tableDefinition.Name = newTableName;
+
+        context.SaveChanges();
+
+        return oldName;
+    }
+
+    /// <summary>
+    /// Sets a new role id for the table.  No other table can have this role id.
+    /// </summary>
+    /// <param name="newRoleId"></param>
+    /// <param name="tableId">Null or the id of the table.  If null, then either roleId or tableName cannot be null.</param>
+    /// <param name="roleId">Null or the role id of the table.  If null, then either roleId or tableName cannot be null.</param>
+    /// <param name="tableName">Null or the name of the table.  If null, then either roleId or tableId cannot be null.</param>
+    /// <exception cref="TableDoesNotExistException">If all arguments are null, or if a table cannot be found with the given argument.</exception>
+    /// <exception cref="TableAlreadyExistsWithRoleException">If there's a table which already has this role id.</exception>
+    public void SetTableRole(ulong newRoleId,
+        int? tableId = null, ulong? roleId = null, string? tableName = null)
     {
         using var context = _factory.CreateDbContext();
 
-        TableDefinitionsModel? tableDefinition = GetTable(context, roleId: oldRoleId);
+        if (InternalDoesTableExist(context, roleId: newRoleId)) throw new TableAlreadyExistsWithRoleException(newRoleId);
 
-        if (tableDefinition is null) throw new TableDoesNotExistException(oldRoleId);
+        TableDefinitionsModel tableDefinition = InternalGetTable(context, tableId: tableId, roleId: roleId, tableName: tableName);
 
         tableDefinition.RoleId = newRoleId;
 
         context.SaveChanges();
     }
 
+    /************************************************************
+     * 
+     * INTERNAL METHODS
+     * 
+     ************************************************************/
+
     /// <summary>
-    /// Helper method to get tables.
+    /// 
     /// </summary>
-    /// <param name="context">db context</param>
+    /// <param name="context"></param>
     /// <param name="tableId"></param>
-    /// <param name="tableName"></param>
     /// <param name="roleId"></param>
-    /// <returns>A TableDefinitionsModel</returns>
+    /// <param name="tableName"></param>
+    /// <returns></returns>
     /// <exception cref="TableDoesNotExistException"></exception>
-    private TableDefinitionsModel GetTable(EinDataContext context, int? tableId = null, string? tableName = null, ulong? roleId = null)
+    internal bool InternalDoesTableExist(EinDataContext context, int? tableId = null, ulong? roleId = null, string? tableName = null)
     {
-        TableDefinitionsModel? tableDefinitions;
+        Func<TableDefinitionsModel, bool>? tableSearchFunc = GetTableSearchFunc(tableId: tableId, roleId: roleId, tableName: tableName);
 
-        if (tableId is not null)
-        {
-            tableDefinitions = context.TableDefinitions.FirstOrDefault(table => table.Id == tableId);
+        if (tableSearchFunc is null) throw new TableDoesNotExistException($"Can't look up NULL table.");
 
-            if (tableDefinitions is null) throw new TableDoesNotExistException((int)tableId);
-        } else if (tableName is not null)
-        {
-            tableDefinitions = context.TableDefinitions.FirstOrDefault(table => table.Name.Equals(tableName));
-            if (tableDefinitions is null) throw new TableDoesNotExistException(tableName);
-        } else if (roleId is not null)
-        {
-            tableDefinitions = context.TableDefinitions.FirstOrDefault(table => table.RoleId == roleId);
-            if (tableDefinitions is null) throw new TableDoesNotExistException((ulong)roleId);
-        } else
-        {
-            throw new TableDoesNotExistException("NULL");
-        }
+        if (context.TableDefinitions.FirstOrDefault(tableSearchFunc) is null) return false;
 
-        return tableDefinitions;
+        return true;
     }
 
+    /// <summary>
+    /// Internal function for retrieving a table in the given context.
+    /// </summary>
+    /// <param name="context">The db context.</param>
+    /// <param name="tableId">Null or the id of the table.  If null, then either roleId or tableName cannot be null.</param>
+    /// <param name="roleId">Null or the role id of the table.  If null, then either roleId or tableName cannot be null.</param>
+    /// <param name="tableName">Null or the name of the table.  If null, then either roleId or tableId cannot be null.</param>
+    /// <returns>A TableDefinitionsModel of the table.</returns>
+    /// <exception cref="TableDoesNotExistException">If all arguments are null, or if a table cannot be found with the given argument.</exception>
+    internal TableDefinitionsModel InternalGetTable(EinDataContext context, int? tableId = null, ulong? roleId = null, string? tableName = null)
+    {
+        Func<TableDefinitionsModel, bool>? tableSearchFunc = GetTableSearchFunc(tableId: tableId, roleId: roleId, tableName: tableName);
+
+        if (tableSearchFunc is null) throw new TableDoesNotExistException($"Can't look up NULL table.");
+
+        TableDefinitionsModel? tableDefinition;
+
+        tableDefinition = context.TableDefinitions.FirstOrDefault(tableSearchFunc);
+
+        if (tableDefinition is null) throw new TableDoesNotExistException($"No table found with lookup: {(tableId is null ? "" : $"tableId: {tableId}")}{(roleId is null ? "" : $"roleId: {roleId}")}{(string.IsNullOrEmpty(tableName) ? "" : $"tableName: {tableName}")}.");
+
+        return tableDefinition!;
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="tableId"></param>
+    /// <param name="roleId"></param>
+    /// <param name="tableName"></param>
+    /// <returns>Null if all args are null, otherwise the search func.</returns>
+    internal Func<TableDefinitionsModel, bool>? GetTableSearchFunc(int? tableId = null, ulong? roleId = null, string? tableName = null)
+    {
+        if (tableId is null && roleId is null && string.IsNullOrEmpty(tableName)) return null;
+
+        Func<TableDefinitionsModel, bool> tableSearchFunc;
+
+        if (tableId is not null) tableSearchFunc = (table => table.Id == tableId);
+        else if (roleId is not null) tableSearchFunc = (table => table.RoleId == roleId);
+        else tableSearchFunc = (table => table.Name.Equals(tableName));
+
+        return tableSearchFunc;
+    }
 }
