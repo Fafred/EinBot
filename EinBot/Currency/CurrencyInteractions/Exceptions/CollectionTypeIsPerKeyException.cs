@@ -1,4 +1,4 @@
-﻿namespace EinBot.Currency.CurrencyInteractions;
+﻿namespace EinBot.Currency.CurrencyInteractions.Exceptions;
 
 using System;
 using System.Runtime.Serialization;

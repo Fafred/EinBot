@@ -31,7 +31,7 @@ public partial class ViewEinEmbedInteractions : InteractionModuleBase<SocketInte
         // Make sure there's actually a table associated with the role.
         try
         {
-            tableDefinition = _dataAccess.GetTable(role.Id);
+            tableDefinition = _dataAccess.GetTable(roleId: role.Id);
             einTable = _dataAccess.GetEinTable(tableDefinition.Id);
         } catch (TableDoesNotExistException)
         {

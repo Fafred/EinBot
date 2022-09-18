@@ -21,8 +21,8 @@ public partial class CollectionInteractions
 
         try
         {
-            einTable = _dataAccess.GetEinTable(Role.Id);
-        } catch (TableDoesNotExistException e)
+            einTable = _dataAccess.GetEinTable(roleId: Role.Id);
+        } catch (TableDoesNotExistException)
         {
             await RespondFailureAsync($"There is no collection associated with the role {Role.Mention}.");
             return;
@@ -51,7 +51,7 @@ public partial class CollectionInteractions
         {
             try
             {
-                var einTable = _dataAccess.GetEinTable(role.Id);
+                var einTable = _dataAccess.GetEinTable(roleId: role.Id);
                 var collectionType = einTable.CollectionTypeName;
                 var tableId = einTable.TableId;
                 var currencyCount = einTable.ColumnDataTypes.Count;
@@ -62,7 +62,7 @@ public partial class CollectionInteractions
                     $"**{role.Mention}**\n*Type*: {collectionType}\n*Currencies*: {currencyCount}\n*Instances*: {instances}",
                     inline: true);
 
-            } catch (TableDoesNotExistException e)
+            } catch (TableDoesNotExistException)
             {
                 continue;
             } catch (NullReferenceException e)

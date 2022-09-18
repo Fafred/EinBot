@@ -38,24 +38,24 @@ public partial class CollectionInteractions
             CollectionTypesEnum collectionType,
             IAttachment csvFile)
         {
-            TableDefinitionsModel? tableDefinition;
+            TableDefinitionsModel tableDefinition;
 
             try
             {
                 tableDefinition = _dataAccess.CreateTable(role.Name, collectionType, role.Id);
 
                 if (tableDefinition is null) throw new NullReferenceException();
-            } catch (TableAlreadyExistsException e)
+            } catch (TableAlreadyExistsException)
             {
-                await RespondAsync($"`[Failure]` There is already a currency assigned to role {role.Mention}.");
+                await RespondAsync($"`[Failure]` There is already a collection assigned to role {role.Mention}.");
                 return;
-            } catch (NullReferenceException e)
+            } catch (NullReferenceException)
             {
-                await RespondAsync($"`[Failure]` Unable to create currency.");
+                await RespondAsync($"`[Failure]` Unable to create collection.");
                 return;
             }
 
-            await RespondAsync($"`[Success]` Currency {role.Mention} has been created as a {(CollectionTypesEnum)tableDefinition.CollectionTypeId} collection.\n\nPlease wait while attempting to create currencies from the following file:\n```\nFilename: {csvFile.Filename}\nContent type: {csvFile.ContentType}\nProxy URL: {csvFile.Url}\nSize: {csvFile.Size}\n```");
+            await RespondAsync($"`[Success]` Collection {role.Mention} has been created as a {(CollectionTypesEnum)tableDefinition.CollectionTypeId} collection.\n\nPlease wait while attempting to create currencies from the following file:\n```\nFilename: {csvFile.Filename}\nContent type: {csvFile.ContentType}\nProxy URL: {csvFile.Url}\nSize: {csvFile.Size}\n```");
 
             try
             {
@@ -96,20 +96,20 @@ public partial class CollectionInteractions
                             continue;
                         }
 
-                        _dataAccess.CreateColumn(tableDefinition.Id, columnName, (DataTypesEnum)dataTypeId);
+                        _dataAccess.CreateColumn(columnName, (DataTypesEnum)dataTypeId, tableId: tableDefinition.Id);
                         resultList.Add($"+[Row {counter++:D3}]\t{record.CurrencyName} {{{record.DataType}}} has been added to {role.Name}.");
-                    } catch (ColumnAlreadyExistsException e)
+                    } catch (ColumnAlreadyExistsException)
                     {
                         resultList.Add($"-[Row  {counter++:D3} ]\t{record} NOT ADDED.  CURRENCY ALREADY EXISTS IN THIS COLLECTION.");
                         continue;
-                    } catch (InvalidNameException e)
+                    } catch (InvalidNameException)
                     {
                         resultList.Add($"-[Row  {counter++:D3} ]\t{record} NOT ADDED.  INVALID CURRENCY NAME.");
                         continue;
                     }
                 }
 
-                StringBuilder sb = new StringBuilder();
+                StringBuilder sb = new();
                 sb.AppendLine("```diff");
 
                 foreach(var line in resultList)
@@ -148,7 +148,7 @@ public partial class CollectionInteractions
         {
             try
             {
-                var einTable = _dataAccess.GetEinTable(role.Id);
+                var einTable = _dataAccess.GetEinTable(roleId: role.Id);
                 await RespondAsync($"Converting {role.Mention} to CSV file and uploading.  Please wait.");
 
                 string fileName = $"{einTable.Name}.csv";
@@ -169,7 +169,7 @@ public partial class CollectionInteractions
 
                 return;
             }
-            catch (TableDoesNotExistException e)
+            catch (TableDoesNotExistException)
             {
                 await RespondAsync($"`[Failure]` There is no collection associated with {role.Mention}.");
                 return;

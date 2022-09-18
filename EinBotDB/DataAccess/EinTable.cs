@@ -2,14 +2,10 @@
 
 using EinBotDB.Context;
 using EinBotDB.Models;
-using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Text;
-using System.Threading.Tasks;
 
 public partial class EinTable
 {
@@ -103,6 +99,7 @@ public partial class EinTable
 
         _tableId = tableId;
         _tableName = table.Name;
+        _roleId = table.RoleId;
         _collectionTypeId = table.CollectionTypeId;
 
         CollectionTypesModel? collectionType;
@@ -146,5 +143,4 @@ public partial class EinTable
 
         Rows = einRowsList.ToImmutableList();
     }
-
 }

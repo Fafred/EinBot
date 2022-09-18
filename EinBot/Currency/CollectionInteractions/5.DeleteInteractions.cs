@@ -25,11 +25,11 @@ public partial class CollectionInteractions
 
         try
         {
-            var table = _dataAccess.DeleteTable(Role.Id);
+            var table = _dataAccess.DeleteTable(roleId: Role.Id);
 
             await RespondAsync($"`[Success]` You have deleted the `{table.Name}` collection associated with the role {Role.Mention}.");
             return;
-        } catch (TableDoesNotExistException e)
+        } catch (TableDoesNotExistException)
         {
             await RespondFailureAsync($"There is no table associated with {Role.Mention}.");
             return;

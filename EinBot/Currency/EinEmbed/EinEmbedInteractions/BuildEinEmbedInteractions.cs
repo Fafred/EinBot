@@ -7,7 +7,7 @@ using EinBotDB.DataAccess;
 using EinBotDB.Models;
 using System.Text;
 
-[Group("build", "Commands for building custom embed displays for roles.")]
+[Group("display", "Commands for building custom embed displays for roles.")]
 public partial class BuildEinEmbedInteractions : InteractionModuleBase<SocketInteractionContext>
 {
     IEinDataAccess _dataAccess;
@@ -30,7 +30,7 @@ public partial class BuildEinEmbedInteractions : InteractionModuleBase<SocketInt
 
         try
         {
-            tableDefinition = _dataAccess.GetTable(role.Id);
+            tableDefinition = _dataAccess.GetTable(roleId: role.Id);
         } catch (TableDoesNotExistException)
         {
             await RespondFailureAsync($"There is no collection associated with the role {role.Mention}.");
@@ -55,7 +55,7 @@ public partial class BuildEinEmbedInteractions : InteractionModuleBase<SocketInt
 
         try
         {
-            tableDefinition = _dataAccess.GetTable(role.Id);
+            tableDefinition = _dataAccess.GetTable(roleId: role.Id);
         } catch (TableDoesNotExistException)
         {
             await RespondFailureAsync($"There is no collection associated with {role.Mention}.");
@@ -166,7 +166,7 @@ public partial class BuildEinEmbedInteractions : InteractionModuleBase<SocketInt
 
         try
         {
-            tableDefinition = _dataAccess.GetTable(role.Id);
+            tableDefinition = _dataAccess.GetTable(roleId: role.Id);
         } catch (TableDoesNotExistException)
         {
             await RespondFailureAsync($"No collection is associated with {role.Mention}.");
@@ -224,7 +224,7 @@ public partial class BuildEinEmbedInteractions : InteractionModuleBase<SocketInt
     private Embed? GetInfoDisplay(IRole role)
     {
 
-        var tableDefinition = _dataAccess.GetTable(role.Id);
+        var tableDefinition = _dataAccess.GetTable(roleId: role.Id);
 
         if (tableDefinition is null)
         {

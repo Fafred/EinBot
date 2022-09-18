@@ -23,7 +23,7 @@ public partial class CollectionInteractions
             _dataAccess.CreateTable(role.Name, CollectionType, role.Id);
             await RespondSuccessAsync($"Collection `{role.Name}` has been created and assigned to {role.Mention}.");
             return;
-        } catch (InvalidNameException e)
+        } catch (InvalidNameException)
         {
             await RespondFailureAsync($"`{role.Name}` is not a valid collection name.");
             return;

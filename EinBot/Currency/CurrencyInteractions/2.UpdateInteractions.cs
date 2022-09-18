@@ -2,9 +2,11 @@
 
 using Discord;
 using Discord.Interactions;
+using EinBot.Currency.CurrencyInteractions.Exceptions;
 using EinBotDB;
 using EinBotDB.DataAccess;
 using EinBotDB.Models;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using System.Text;
 
 public partial class CurrencyInteractions
@@ -42,10 +44,12 @@ public partial class CurrencyInteractions
             return;
         }
 
+        var tableId = tableDefinition!.Id;
+        var columnId = columnDefinition!.Id;
         // Attempt to set the value.
         try
         {
-            _dataAccess.SetCellValue(tableDefinition!.Id, columnDefinition!.Name, setValue, rowKey: key);
+            _dataAccess.SetCellValue(setValue, tableId: tableId, columnId: columnId, rowKey: key);
         } catch (InvalidDataException e)
         {
             await RespondFailureAsync($"{role.Mention}'s {e.Message}.");
@@ -104,18 +108,20 @@ public partial class CurrencyInteractions
             return;
         }
 
+        int tableId = tableDefinition!.Id;
+        int columnId = columnDefinition!.Id;
         string? oldValue;
         string? newValue;
         // Attempt to set the value.
         try
         {
-            oldValue = _dataAccess.GetCellValue(tableDefinition!.Id, columnDefinition!.Name, out _, rowKey: key);
+            oldValue = _dataAccess.GetCellValue(tableId: tableId, columnId: columnId, rowKey: key);
 
-            if (string.IsNullOrEmpty(oldValue)) oldValue = "[NO VALUE]";
+            oldValue ??= "[NO VALUE]";
 
-            _dataAccess.ModifyCellValue(tableDefinition!.Id, columnDefinition!.Name, modifyValue, rowKey: key);
+            _dataAccess.ModifyCellValue(modifyValue, tableId: tableId, columnId: columnId, rowKey: key);
 
-            newValue = _dataAccess.GetCellValue(tableDefinition!.Id, columnDefinition!.Name, out _, rowKey: key);
+            newValue = _dataAccess.GetCellValue(tableId: tableId, columnId: columnId, rowKey: key);
         }
         catch (InvalidDataException e)
         {
@@ -147,15 +153,13 @@ public partial class CurrencyInteractions
                             out string keyMention,
                              IUser? user = null, string? collectionKey = null)
     {
-        tableDefinition = _dataAccess.GetTable(role.Id);
+        tableDefinition = _dataAccess.GetTable(roleId: role.Id);
 
         // Make sure the table exists.
         if (tableDefinition is null) throw new TableDoesNotExistException();
 
         // Make sure the column exists.
-        columnDefinition = _dataAccess.GetColumns(tableDefinition.Id)
-                                    .FirstOrDefault(column => column.Name.Equals(currencyName));
-
+        columnDefinition = _dataAccess.GetColumn(columnName: currencyName, tableId: tableDefinition.Id);
 
         if (columnDefinition is null) throw new ColumnDoesNotExistException("");
 

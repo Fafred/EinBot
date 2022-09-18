@@ -5,68 +5,64 @@ using System.Collections.Generic;
 
 public interface IEinDataAccess
 {
-    public int AddEmbedPart(EmbedPartsEnum embedPart,
-        string Data01, string? Data02 = null, string? Data03 = null,
-        int? tableId = null, ulong? roleId = null, string? tableName = null,
-        int? sequence = null);
+    /// <summary>
+    /// Adds a part to the embed display.
+    /// </summary>
+    /// <param name="embedPart">The <see cref="EmbedPartsEnum">Embed Part ID</see> the part is.</param>
+    /// <param name="Data01">The data in the first slot.</param>
+    /// <param name="Data02">Null or the data in the first slot.</param>
+    /// <param name="Data03">Null or the data in the first slot.</param>
+    /// <param name="tableId">Null or the table id the display is attached to.  If null, then either role id or tablename cannot be.</param>
+    /// <param name="roleId">Null or the role id the display is attached to.  If null, then either table id or tablename cannot be.</param>
+    /// <param name="tableName">Null or the name the display is attached to.  If null, then either role id or table id cannot be.</param>
+    /// <param name="sequence">The order # of the part.  If null will place it at the end.</param>
+    /// <exception cref="TableDoesNotExistException">If no such table exists.</exception>"
+    /// <returns>The id of the new <see cref="EinEmbedPartsModel"/></returns>
+    int AddEmbedPart(EmbedPartsEnum embedPart, string Data01, string? Data02 = null, string? Data03 = null, int? tableId = null, ulong? roleId = null, string? tableName = null, int? sequence = null);
 
     /// <summary>
-    /// Add a row to a table.
+    /// Adds a "row" to the given table.  If no dataDict is supplied, or a column isn't present in the dataDict, the default value for the column will be an empty string.
     /// </summary>
-    /// <param name="tableId">The id of the table to add a row to.</param>
-    /// <param name="key">The key of the role.</param>
-    /// <param name="columnsDataDict">A dictionary with Key:Value of ColumnName:Data</param>
-    /// <returns>The row number of the newly insterted row.</returns>
-    /// <exception cref="KeyAlreadyPresentInTableException">If the given key is already present in the table.</exception>
-    /// <exception cref="InvalidDataException">If one of the given data types doesn't match the data type defined by the column.</exception>
-    /// <exception cref="TableDoesNotExistException">If a table with the given tableId does not exist.</exception>"
-    int AddRow(int tableId, string key, Dictionary<string, string>? columnsDataDict = null);
-
-    /// <summary>
-    /// Changes the key of a row.
-    /// </summary>
-    /// <param name="tableId">The id of the table the row is in.</param>
-    /// <param name="rowNum">The row number of the row.</param>
-    /// <param name="key">The new key to assign.</param>
-    /// <returns>True/False of success.</returns>
+    /// <param name="rowKey">The key to give to the row.  This must be unique key for the table.</param>
+    /// <param name="dataDict">Optional Dictionary<string, string>, where the key is the name of the column and the value is the data to put into it.</param>
+    /// <param name="tableId">NULL or the id of the table to make a row in.  If null, then either roleId or tableName cannot be null.</param>
+    /// <param name="roleId">NULL or the role id of the table to make a row in.  If null, then either tableId or tableName cannot be null.</param>
+    /// <param name="tableName">NULL or the name of the table to make a row in.  If null, then either roleId or tableId cannot be null.</param>
     /// <exception cref="TableDoesNotExistException">If the given table does not exist.</exception>
-    bool ChangeKey(int tableId, int rowNum, string key);
+    /// <exception cref="InvalidKeyException">If the key is null.</exception>
+    /// <exception cref="KeyAlreadyPresentInTableException">If the key is already present in the table.</exception>"
+    /// <exception cref="InvalidDataException">If the data given in one of the values in the dataDict does not match the column data type.</exception>
+    void AddRow(string rowKey, Dictionary<string, string>? dataDict = null, int? tableId = null, ulong? roleId = null, string? tableName = null);
+
+    /// <summary>
+    /// Changes the key of a given row in a table.
+    /// </summary>
+    /// <param name="newKey">The new key for the given row in the table.</param>
+    /// <param name="tableId">NULL or the id of the table to change the row key in.  If null, then either roleId or tableName cannot be null.</param>
+    /// <param name="roleId">NULL or the role id of the table to change the row key in.  If null, then either tableId or tableName cannot be null.</param>
+    /// <param name="tableName">NULL or the name of the table to change the row key in.  If null, then either roleId or tableId cannot be null.</param>
+    /// <param name="rowNum"></param>
+    /// <param name="rowKey"></param>
+    /// <returns></returns>
+    /// <exception cref="TableDoesNotExistException">If the given table does not exist.</exception>
+    /// <exception cref="InvalidKeyException">If the new key is null, or if the rowKey and rowNum are both null.</exception>
+    /// <exception cref="CellDoesNotExistException">If there are no cells with the given rowKey and rowNum.</exception>
+    /// <exception cref="KeyAlreadyPresentInTableException">If the table already has cells with the newKey key.</exception>    
+    string ChangeKey(string newKey, int? tableId = null, ulong? roleId = null, string? tableName = null, int? rowNum = null, string? rowKey = null);
 
     /// <summary>
     /// Create a new column for the given table.
     /// </summary>
-    /// <param name="tableId">The id of the table this column should be placed in.</param>
+    /// <param name="tableId">Null or the id of the table this column should be placed in.  If null, then either roleId or tableName must not be null.</param>
+    /// <param name="roleId">Null or the role id of the table this column should be placed in.  If null, then either tableId or tableName must not be null.</param>
+    /// <param name="tableName">Null or the name of the table this column should be placed in.  If null, then either tableId or roleId must not be null.</param>
     /// <param name="columnName">The name of the column.  Everything other than alpha-numerics and '-' chars are stripped out.</param>
     /// <param name="dataType">The type of data stored in this column</param>
     /// <returns>A ColumnDefinitionModel entity returned by the db context.</returns>
     /// <exception cref="TableDoesNotExistException">If the table the column was to be added to does not exist.</exception>
     /// <exception cref="InvalidNameException">If the name of the column is invalid.</exception>
     /// <exception cref="ColumnAlreadyExistsException">If there is already a column with that name in the given table.</exception>
-    ColumnDefinitionsModel? CreateColumn(int tableId, string columnName, DataTypesEnum dataType);
-
-    /// <summary>
-    /// Create a new column for the given table.
-    /// </summary>
-    /// <param name="tableName">The name of the table this column should be placed in.</param>
-    /// <param name="columnName">The name of the column.  Everything other than alpha-numerics and '-' chars are stripped out.</param>
-    /// <param name="dataType">The type of data stored in this column</param>
-    /// <returns>A ColumnDefinitionModel entity returned by the db context.</returns>
-    /// <exception cref="TableDoesNotExistException">If the table the column was to be added to does not exist.</exception>
-    /// <exception cref="InvalidNameException">If the name of the column is invalid.</exception>
-    /// <exception cref="ColumnAlreadyExistsException">If there is already a column with that name in the given table.</exception>
-    ColumnDefinitionsModel? CreateColumn(string tableName, string columnName, DataTypesEnum dataType);
-
-    /// <summary>
-    /// Create a new column for the given table.
-    /// </summary>
-    /// <param name="roleId">The role id of the table this column should be placed in.</param>
-    /// <param name="columnName">The name of the column.  Everything other than alpha-numerics and '-' chars are stripped out.</param>
-    /// <param name="dataType">The type of data stored in this column</param>
-    /// <returns>A ColumnDefinitionModel entity returned by the db context.</returns>
-    /// <exception cref="TableDoesNotExistException">If the table the column was to be added to does not exist.</exception>
-    /// <exception cref="InvalidNameException">If the name of the column is invalid.</exception>
-    /// <exception cref="ColumnAlreadyExistsException">If there is already a column with that name in the given table.</exception>
-    ColumnDefinitionsModel? CreateColumn(ulong roleId, string columnName, DataTypesEnum dataType);
+    ColumnDefinitionsModel CreateColumn(string columnName, DataTypesEnum dataType, int? tableId = null, ulong? roleId = null, string? tableName = null);
 
     /// <summary>
     /// Creates a new table.
@@ -75,397 +71,282 @@ public interface IEinDataAccess
     /// <param name="collectionType">The type of collection this table is.</param>
     /// <param name="roleId">The role id associated with this table.</param>
     /// <returns>The TableDefinitionsModel entity of the created table.</returns>
-    /// <exception cref="InvalidNameException">If the table name is invalid.</exception>
-    /// <exception cref="TableAlreadyExistsException">If a table already exists with the given name or role.</exception>"
-    TableDefinitionsModel? CreateTable(string tableName, CollectionTypesEnum collectionType, ulong roleId);
+    /// <exception cref="InvalidNameException"></exception>
+    /// <exception cref="TableAlreadyExistsException"></exception>"
+    /// /// <exception cref="TableAlreadyExistsWithRoleException"></exception>"
+    /// /// <exception cref="TableAlreadyExistsWithNameException"></exception>"
+    TableDefinitionsModel CreateTable(string tableName, CollectionTypesEnum collectionType, ulong roleId);
 
     /// <summary>
-    /// Attempts to delete a column with the given id.
+    /// Deletes a column.  May either supply a column id, or else a column name + a table identifier (id, role id, table name).
     /// </summary>
-    /// <param name="columnId">The id of the column to delete</param>
-    /// <returns>A ColumnDefinitionsModel entity of the deleted column.</returns>
-    /// <exception cref="ColumnDoesNotExistException">If there is no column with the given id.</exception>
-    ColumnDefinitionsModel DeleteColumn(int columnId);
+    /// <param name="columnName">The name of the column. If null, then columnId must not be null.</param>
+    /// <param name="columnId">Null or the id of the column.  If null, then columnName cannot be NULL and one of the table identifiers must also not be null.</param>
+    /// <param name="tableId">Null or the id of the table this column should be placed in.  If null, then either roleId or tableName must not be null if columnId is null.</param>
+    /// <param name="roleId">Null or the role id of the table this column should be placed in.  If null, then either tableId or tableName must not be null if columnId is null.</param>
+    /// <param name="tableName">Null or the name of the table this column should be placed in.  If null, then either tableId or roleId must not be null if columnId is null.</param>
+    /// <returns>A ColumnDefinitionModel entity returned by the db context after it removes the column.</returns>
+    /// <exception cref="TableDoesNotExistException">If the table the column was to be removed from does not exist.</exception>
+    /// <exception cref="ColumnDoesNotExistException">If there is no column that matches the given id or name + tableid.</exception>    
+    ColumnDefinitionsModel DeleteColumn(string? columnName = null, int? columnId = null, int? tableId = null, ulong? roleId = null, string? tableName = null);
 
     /// <summary>
-    /// Attempts to delete a column with the given id.
+    /// Deletes a given row from the table.
     /// </summary>
-    /// <param name="tableId">The id of the table the column is in.</param>
-    /// <param name="columnName">The name of the column to delete.</param>
-    /// <returns>A ColumnDefinitionsModel entity of the deleted column.</returns>
-    /// <exception cref="ColumnDoesNotExistException">If there is no column with the given id.</exception>
-    ColumnDefinitionsModel DeleteColumn(int tableId, string columnName);
+    /// <param name="tableId">NULL or the id of the table to delete the row in.  If null, then either roleId or tableName cannot be null.</param>
+    /// <param name="roleId">NULL or the role id of the table to delete the row in.  If null, then either tableId or tableName cannot be null.</param>
+    /// <param name="tableName">NULL or the name of the table to delete the row in.  If null, then either roleId or tableId cannot be null.</param>
+    /// <param name="rowNum">NULL or the row num of the row to delete the row in.  If null, rowKEY cannot be null.</param>
+    /// <param name="rowKey">NULL or the key of the row to delete the row in.  If null, rowNum cannot be null.</param>
+    /// <exception cref="InvalidKeyException"></exception>
+    /// <exception cref="TableDoesNotExistException">If the given table does not exist.</exception>    
+    void DeleteRow(int? tableId = null, ulong? roleId = null, string? tableName = null, int? rowNum = null, string? rowKey = null);
 
     /// <summary>
-    /// Attempts to delete a column with the given name from the table with the given name.
+    /// Deletes a table.
     /// </summary>
-    /// <param name="tableName"></param>
-    /// <param name="columnName">The name of the column to delete.</param>
-    /// <returns>A ColumnDefinitionsModel entity of the deleted column.</returns>
-    /// <exception cref="ColumnDoesNotExistException">If there is no column with the given column id.</exception>
-    /// <exception cref="TableDoesNotExistException">If there is no table with the given table name.</exception>
-    ColumnDefinitionsModel DeleteColumn(string tableName, string columnName);
+    /// <param name="tableId">NULL or the id of the table to delete.  If null, then either role id or tablename cannot be.</param>
+    /// <param name="roleId">NULL or the role id of the table to delete.  If null, then either table id or tablename cannot be.</param>
+    /// <param name="tableName">NULL or the name of the table to delete.  If null, then either role id or table id cannot be.</param>
+    /// <returns>A <class cref="TableDefinitionsModel">TableDefinitionsModel</class> of the deleted table.</returns>
+    TableDefinitionsModel DeleteTable(int? tableId = null, ulong? roleId = null, string? tableName = null);
 
     /// <summary>
-    /// Attempts to delete a column with the given name from the table with the given name.
+    /// Checks if a table with the given identifiers exists.
     /// </summary>
-    /// <param name="tableRoleId">The role id of the table the column is on</param>
-    /// <param name="columnName">The name of the column to delete.</param>
-    /// <returns>A ColumnDefinitionsModel entity of the deleted column.</returns>
-    /// <exception cref="ColumnDoesNotExistException">If there is no column with the given role id.</exception>
-    /// <exception cref="TableDoesNotExistException">If there is no table with the given role id.</exception>
-    ColumnDefinitionsModel DeleteColumn(ulong tableRoleId, string columnName);
+    /// <param name="tableId">NULL or the id of the table.  If null, then either role id or table name must not be null.</param>
+    /// <param name="roleId">NULL or the role id of the table.  If null, then either table id or table name must not be null.</param>
+    /// <param name="tableName">NULL or the name of thet able.  If nole then either table id or role id must not be null.</param>
+    /// <returns>True if table exists, otherwise false.</returns>
+    bool DoesTableExist(int? tableId = null, ulong? roleId = null, string? tableName = null);
 
     /// <summary>
-    /// Removes a row from a table.
+    /// Retrieves the value of a cell from the given table, column, and row.
     /// </summary>
-    /// <param name="tableId">The table to remove the row from.</param>
-    /// <param name="rowNum">The number of the row to remove (if null, must provide a key).</param>
-    /// <param name="key">The key of the row to remove (if null, must provide a rowNum).</param>
-    /// <returns>True/False of success.</returns>
+    /// <param name="tableId">NULL or the id of the table to get the cell value of.  If null, then either roleId or tableName cannot be null.</param>
+    /// <param name="roleId">NULL or the role id of the table get the cell value of.  If null, then either tableId or tableName cannot be null.</param>
+    /// <param name="tableName">NULL or the name of the table get the cell value of.  If null, then either roleId or tableId cannot be null.</param>
+    /// <param name="columnId">NULL or the column id of the cell to get the value of.  If null, then columnName cannot be null.</param>
+    /// <param name="columnName">NULL or the column name of the cell to get the value of.  If null, then columnId cannot be null.</param>
+    /// <param name="rowNum">NULL or the row num of the row to get the cell value of.  If null, rowKEY cannot be null.</param>
+    /// <param name="rowKey">NULL or the key of the row to get the cell value of.  If null, rowNum cannot be null.</param>
+    /// <returns>A string of the cell's value.  If the value is null, then it will return an empty string.</returns>
+    /// <exception cref="TableDoesNotExistException">If the given table does not exist.</exception>
+    /// <exception cref="ColumnDoesNotExistException">If the given column does not exist.</exception>
+    /// <exception cref="CellDoesNotExistException">If the given cell does not exist.</exception>
+    string GetCellValue(int? tableId = null, ulong? roleId = null, string? tableName = null, int? columnId = null, string? columnName = null, int? rowNum = null, string? rowKey = null);
+
+    /// <summary>
+    /// Retrieves a column of the given table..
+    /// </summary>
+    /// <param name="columnName">Null or the name of the column to retrieve. If null then columnId cannot be null.</param>
+    /// <param name="columnId">Null or the id of the column to retrieve.  If null then columnName cannot be null</param>
+    /// <param name="tableId">Null or the id of the table this column is in.  If null, then either roleId or tableName must not be null if columnId is null.</param>
+    /// <param name="roleId">Null or the role id of the table this column is in.  If null, then either tableId or tableName must not be null if columnId is null.</param>
+    /// <param name="tableName">Null or the name of the table this column is in.  If null, then either tableId or roleId must not be null if columnId is null.</param>
+    /// <returns>The ColumnDefinitionModel of the column.</returns>
     /// <exception cref="TableDoesNotExistException">If the table does not exist.</exception>
-    bool DeleteRow(int tableId, int? rowNum = null, string? key = null);
+    /// <exception cref="ColumnDoesNotExistException">If the column does not exist.</exception>"    
+    public ColumnDefinitionsModel GetColumn(string? columnName = null, int? columnId = null, int? tableId = null, ulong? roleId = null, string? tableName = null);
 
     /// <summary>
-    /// Removes the table with the given table id.
+    /// Retrieves all the columns of the given table..
     /// </summary>
-    /// <param name="tableId">The id of the table to delete.</param>
-    /// <exception cref="TableDoesNotExistException">If there's no table with the given table id.</exception>
-    TableDefinitionsModel DeleteTable(int tableId);
-
-    /// <summary>
-    /// Removes the table with the given table name.
-    /// </summary>
-    /// <param name="tableName">The name of the table to delete.</param>
-    /// <exception cref="TableDoesNotExistException">If there's no table with the given name.</exception>
-    TableDefinitionsModel DeleteTable(string tableName);
-
-    /// <summary>
-    /// Removes the table with the given role id.
-    /// </summary>
-    /// <param name="roleId">The role id of the table to delete.</param>
-    /// <exception cref="TableDoesNotExistException">If there's no table with the given role id.</exception>
-    TableDefinitionsModel DeleteTable(ulong roleId);
-
-    /// <summary>
-    /// Retrieves the data of the cell in the given column of the given table.
-    /// </summary>
-    /// <param name="tableName">The name of the table the cell is in.</param>
-    /// <param name="columnName"></param>
-    /// <param name="dataType">OUT the data type associated with the cell.</param>
-    /// <param name="rowNum">Null or the row number of the cell.  Cannot be null if rowKey is null.</param>
-    /// <param name="rowKey">Null or the key associated with the row of the cell.  Cannot be null of rowNum is null.</param>
-    /// <returns>The data in the given cell.</returns>
-    /// <exception cref="InvalidDataException">If unable to determine the cell's data type.</exception>
-    /// <exception cref="TableDoesNotExistException">If the given table does not exist.</exception>
-    /// <exception cref="ColumnDoesNotExistException">If the given table has no column with the given name.</exception>
-    /// <exception cref="CellDoesNotExistException">If there's no cells with the given table, column name, row num, or row key.</exception>
-    public string? GetCellValue(string tableName, string columnName, out DataTypesEnum? dataType, int? rowNum = null, string? rowKey = null);
-
-    /// <summary>
-    /// Retrieves the data of the cell in the given column of the given table.
-    /// </summary>
-    /// <param name="roleId">The id of the role associated with the table the cell is in.</param>
-    /// <param name="columnName"></param>
-    /// <param name="dataType">OUT the data type associated with the cell.</param>
-    /// <param name="rowNum">Null or the row number of the cell.  Cannot be null if rowKey is null.</param>
-    /// <param name="rowKey">Null or the key associated with the row of the cell.  Cannot be null of rowNum is null.</param>
-    /// <returns>The data in the given cell.</returns>
-    /// <exception cref="InvalidDataException">If unable to determine the cell's data type.</exception>
-    /// <exception cref="TableDoesNotExistException">If the given table does not exist.</exception>
-    /// <exception cref="ColumnDoesNotExistException">If the given table has no column with the given name.</exception>
-    /// <exception cref="CellDoesNotExistException">If there's no cells with the given table, column name, row num, or row key.</exception>
-    public string? GetCellValue(ulong roleId, string columnName, out DataTypesEnum? dataType, int? rowNum = null, string? rowKey = null);
-
-    /// <summary>
-    /// Retrieves the data of the cell in the given column of the given table.
-    /// </summary>
-    /// <param name="tableId">The id of the table the cell is in.</param>
-    /// <param name="columnName"></param>
-    /// <param name="dataType">OUT the data type associated with the cell.</param>
-    /// <param name="rowNum">Null or the row number of the cell.  Cannot be null if rowKey is null.</param>
-    /// <param name="rowKey">Null or the key associated with the row of the cell.  Cannot be null of rowNum is null.</param>
-    /// <returns>The data in the given cell.</returns>
-    /// <exception cref="InvalidDataException">If unable to determine the cell's data type.</exception>
-    /// <exception cref="TableDoesNotExistException">If the given table does not exist.</exception>
-    /// <exception cref="ColumnDoesNotExistException">If the given table has no column with the given name.</exception>
-    /// <exception cref="CellDoesNotExistException">If there's no cells with the given table, column name, row num, or row key.</exception>
-    public string? GetCellValue(int tableId, string columnName, out DataTypesEnum? dataType, int? rowNum = null, string? rowKey = null);
-
-    /// <summary>
-    /// Retrieves the columns of a table.
-    /// </summary>
-    /// <param name="tableId">id of table the columns are in.</param>
-    /// <returns>List of ColumnDefinitionsModel.</returns>
-    /// <exception cref="TableDoesNotExistException">If no table exists with the given id.</exception>
-    List<ColumnDefinitionsModel> GetColumns(int tableId);
-
-    /// <summary>
-    /// Retrieves the columns of a table.
-    /// </summary>
-    /// <param name="tableName">name of table the columns are in.</param>
-    /// <returns>List of ColumnDefinitionsModel.</returns>
-    /// <exception cref="TableDoesNotExistException">If no table exists with the given name.</exception>
-    List<ColumnDefinitionsModel> GetColumns(string tableName);
-
-    /// <summary>
-    /// Retrieves the columns of a table.
-    /// </summary>
-    /// <param name="roleId">role id of table the columns are in.</param>
-    /// <returns>List of ColumnDefinitionsModel.</returns>
-    /// <exception cref="TableDoesNotExistException">If no table exists with the given role id.</exception>
-    List<ColumnDefinitionsModel> GetColumns(ulong roleId);
+    /// <param name="tableId">Null or the id of the table to get the columns from.  If null, then either roleId or tableName must not be null if columnId is null.</param>
+    /// <param name="roleId">Null or the role id of the table to get the columns from.  If null, then either tableId or tableName must not be null if columnId is null.</param>
+    /// <param name="tableName">Null or the name of the table to get the columns from.  If null, then either tableId or roleId must not be null if columnId is null.</param>
+    /// <returns>A list of all the columns in the table.</returns>
+    /// <exception cref="TableDoesNotExistException">If the table does not exist.</exception>
+    List<ColumnDefinitionsModel> GetColumns(int? tableId = null, ulong? roleId = null, string? tableName = null);
 
     /// <summary>
     /// Returns the DataType id with the given name, or null if none is found.
     /// </summary>
     /// <param name="dataTypeName">The name of the data type.</param>
     /// <returns>The DataType id with that name, or null if none is found.</returns>
-    int? GetDataTypeId(string dataTypeName);
+    public int? GetDataTypeId(string dataTypeName);
 
     /// <summary>
-    /// Creates and returns an EinTable object from the given table name.
+    /// Retrieves an EinTable from the given table.
     /// </summary>
     /// <param name="tableId">The id of the table.</param>
-    /// <returns>An EinTable of the given table.</returns>
-    /// <exception cref="TableDoesNotExistException">If there's no table with the given table id.</exception>
-    EinTable GetEinTable(int tableId);
+    /// <param name="roleId">The role id of the table.</param>
+    /// <param name="tableName">The name of the table.</param>
+    /// <returns>An EinTable from the given table.</returns>
+    EinTable GetEinTable(int? tableId = null, ulong? roleId = null, string? tableName = null);
 
     /// <summary>
-    /// Creates and returns an EinTable object from the given table name.
+    /// Retrieves the embed part with the given Id which is attached to the given table.
     /// </summary>
-    /// <param name="tableName">Name of the table.</param>
-    /// <returns>An EinTable of the given table.</returns>
-    /// <exception cref="TableDoesNotExistException">If there's no table with the given table name.</exception>
-    EinTable GetEinTable(string tableName);
+    /// <param name="embedPartId">The id of the part.</param>
+    /// <param name="tableId">Null or the table id the embed is attached to.  If null, then either role id or tablename cannot be.</param>
+    /// <param name="roleId">Null or the role id the embed is attached to.  If null, then either table id or tablename cannot be.</param>
+    /// <param name="tableName">Null or the name the embed is attached to.  If null, then either role id or table id cannot be.</param>
+    /// <returns>The <see cref="EinEmbedPartsModel"/> or null if none exists which matches the criteria.</returns>    
+    /// <exception cref="TableDoesNotExistException">If the given table does not exist.</exception>
+    EinEmbedPartsModel? GetEmbedPart(int embedPartId, int? tableId = null, ulong? roleId = null, string? tableName = null);
 
     /// <summary>
-    /// Creates and returns an EinTable object from the given table name.
+    /// Retrieves a list of the embed parts which are attached to the given table.
     /// </summary>
-    /// <param name="roleId">Role id of the table.</param>
-    /// <returns>An EinTable of the given table.</returns>
-    /// <exception cref="TableDoesNotExistException">If there's no table with the given role id.</exception>
-    EinTable GetEinTable(ulong roleId);
-
-    public int GetEmbedPartSequence(int embedPartId);
-
-    public EinEmbedPartsModel? GetEmbedPart(int embedPartId, int? tableId = null, ulong? roleId = null, string? tableName = null);
-
-    public List<EinEmbedPartsModel>? GetEmbedParts(int? tableId = null, ulong? roleId = null, string? tableName = null);
+    /// <param name="embedPartId">The id of the part.</param>
+    /// <param name="tableId">Null or the table id the embeds are attached to.  If null, then either role id or tablename cannot be.</param>
+    /// <param name="roleId">Null or the role id the embeds are attached to.  If null, then either table id or tablename cannot be.</param>
+    /// <param name="tableName">Null or the name the embeds are attached to.  If null, then either role id or table id cannot be.</param>
+    /// <returns>A List of <see cref="EinEmbedPartsModel"/> or null if none exist.</returns>
+    /// <exception cref="TableDoesNotExistException">If the given table does not exist.</exception>
+    List<EinEmbedPartsModel>? GetEmbedParts(int? tableId = null, ulong? roleId = null, string? tableName = null);
 
     /// <summary>
-    /// Retrieves a table with the given name.
+    /// Retrieves the sequence # of the given part.
     /// </summary>
-    /// <param name="tableName">Name of the table.</param>
-    /// <returns>The TableDefinitionsModel of the table.</returns>
-    /// <exception cref="TableDoesNotExistException">If a table with the given table name does not exist.</exception>
-    public TableDefinitionsModel GetTable(string tableName);
+    /// <param name="embedPartId">The id of the part to get the sequence of.</param>
+    /// <returns>The sequence # of the part.</returns>
+    /// <exception cref="EinEmbedPartDoesNotExistException">If there's no part with the given id./exception>   
+    int GetEmbedPartSequence(int embedPartId);
 
     /// <summary>
-    /// Retrieves a table with the given role id.
+    /// Retrieves a table with the given tableId, roleId, or tableName.
     /// </summary>
-    /// <param name="tableId">Table id of the table.</param>
-    /// <returns>The TableDefinitionsModel of the table.</returns>
-    /// <exception cref="TableDoesNotExistException">If a table with the given table id does not exist.</exception>
-    public TableDefinitionsModel GetTable(int tableId);
+    /// <param name="tableId">Null or the id of the table.  If null, then either roleId or tableName cannot be null.</param>
+    /// <param name="roleId">Null or the role id of the table.  If null, then either roleId or tableName cannot be null.</param>
+    /// <param name="tableName">Null or the name of the table.  If null, then either roleId or tableId cannot be null.</param>
+    /// <returns>A TableDefinitionsModel of the table.</returns>
+    /// <exception cref="TableDoesNotExistException">If all arguments are null, or if a table cannot be found with the given argument.</exception>
+    TableDefinitionsModel GetTable(int? tableId = null, ulong? roleId = null, string? tableName = null);
 
     /// <summary>
-    /// Retrieves a table with the given role id.
+    /// Checks the given data against the given data type.
     /// </summary>
-    /// <param name="roleId">Role id associated with the table.</param>
-    /// <returns>The TableDefinitionsModel of the table.</returns>
-    /// <exception cref="TableDoesNotExistException">If a table with the given role id does not exist.</exception>
-    public TableDefinitionsModel GetTable(ulong roleId);
-
+    /// <param name="dataType">The data type to check against.</param>
+    /// <param name="data">The data to check against the data type.</param>
+    /// <returns>True if matches, false otherwise.</returns>
+    bool IsValidValue(DataTypesEnum dataType, string data);
 
     /// <summary>
-    /// Modifies the value of the cell.  If numeric type, it will add or subtract the given modifier.  If text, it will simply set the data to the modifier.
+    /// Modifies the value in a cell.  If the cell data type is a string, it will replace it.  If numeric, it will add or subtract.
     /// </summary>
-    /// <param name="roleId">The id of the role associated with the table the cell is in.</param>
-    /// <param name="columnName">The name of the column the cell is in.</param>
-    /// <param name="modifier">The modifier to apply to the data.</param>
-    /// <param name="rowNum">Null or the row number of the cell.  Cannot be null if rowKey is null.</param>
-    /// <param name="rowKey">Null or the key associated with the row of the cell.  Cannot be null of rowNum is null.</param>
+    /// <param name="modifier">Value to modify the cell data by.</param>
+    /// <param name="tableId">NULL or the id of the table to modify the cell value of.  If null, then either roleId or tableName cannot be null.</param>
+    /// <param name="roleId">NULL or the role id of the table modify the cell value of.  If null, then either tableId or tableName cannot be null.</param>
+    /// <param name="tableName">NULL or the name of the table modify the cell value of.  If null, then either roleId or tableId cannot be null.</param>
+    /// <param name="columnId">NULL or the column id of the cell to modify the value of.  If null, then columnName cannot be null.</param>
+    /// <param name="columnName">NULL or the column name of the modify to get the value of.  If null, then columnId cannot be null.</param>
+    /// <param name="rowNum">NULL or the row num of the row to get the modify value of.  If null, rowKEY cannot be null.</param>
+    /// <param name="rowKey">NULL or the key of the row to get the modify value of.  If null, rowNum cannot be null.</param>
     /// <returns></returns>
-    /// <exception cref="InvalidDataException">If the given modifier does not match the cell's data type.</exception>
+    /// <exception cref="InvalidDataException">If the given data type does not match the cell's data type (ie, text when the cell is a numeric).</exception>
     /// <exception cref="TableDoesNotExistException">If the given table does not exist.</exception>
-    /// <exception cref="ColumnDoesNotExistException">If the given table has no column with the given name.</exception>
-    /// <exception cref="CellDoesNotExistException">If there's no cells with the given table, column name, row num, or row key.</exception>
-    public bool ModifyCellValue(ulong roleId, string columnName, string modifier, int? rowNum = null, string? rowKey = null);
+    /// <exception cref="ColumnDoesNotExistException">If the given column does not exist.</exception>
+    /// <exception cref="InvalidKeyException">If rowNum and rowKey are null</exception>"
+    /// <exception cref="CellDoesNotExistException">If there are no cells with the given rowNum or rowKey.</exception>"
+    bool ModifyCellValue(string modifier, int? tableId = null, ulong? roleId = null, string? tableName = null, int? columnId = null, string? columnName = null, int? rowNum = null, string? rowKey = null);
 
     /// <summary>
-    /// Modifies the value of the cell.  If numeric type, it will add or subtract the given modifier.  If text, it will simply set the data to the modifier.
+    /// Removes all the embed parts attached to the given table.
     /// </summary>
-    /// <param name="tableId">The id of the table the cell is in.</param>
-    /// <param name="columnName">The name of the column the cell is in.</param>
-    /// <param name="modifier">The modifier to apply to the data.</param>
-    /// <param name="rowNum">Null or the row number of the cell.  Cannot be null if rowKey is null.</param>
-    /// <param name="rowKey">Null or the key associated with the row of the cell.  Cannot be null of rowNum is null.</param>
+    /// <param name="tableId">Null or the table id the embeds are attached to.  If null, then either role id or tablename cannot be.</param>
+    /// <param name="roleId">Null or the role id the embeds are attached to.  If null, then either table id or tablename cannot be.</param>
+    /// <param name="tableName">Null or the name the embeds are attached to.  If null, then either role id or table id cannot be.</param>
+    /// <exception cref="TableDoesNotExistException">If the given table does not exist.</exception>
+    void RemoveAllEmbedParts(int? tableId = null, ulong? roleId = null, string? tableName = null);
+
+    /// <summary>
+    /// Removes the embed part with the given id.
+    /// </summary>
+    /// <param name="embedPartId">The id of the part to remove.</param>
+    /// <exception cref="EinEmbedPartDoesNotExistException">If no embed exists with the given id.</exception>   
+    void RemoveEmbedPart(int embedPartId);
+
+    /// <summary>
+    /// Renames a column.
+    /// </summary>
+    /// <param name="newColumnName">The new column name.  Cannot be null or empty, and will be stripped of non-alpha-numerics and non-dashes.</param>
+    /// <param name="oldColumnName">NULL or the name of the column to rename.  If null, columnID may not be null.</param>
+    /// <param name="columnId">NULL or the id of the column.  Cannot be null if columnName is null.  If given, then the table identifiers may all be null.</param>
+    /// <param name="tableId">NULL or the id of the table the column is on.  Only necessary if columnID is null.</param>
+    /// <param name="roleId">NULL or the role id of the table the column is on.  Only necessary if columnID is null.</param>
+    /// <param name="tableName">NULL or the name of the table the column is on.  Only necessary if columnID is null.</param>
     /// <returns></returns>
-    /// <exception cref="InvalidDataException">If the given modifier does not match the cell's data type.</exception>
-    /// <exception cref="TableDoesNotExistException">If the given table does not exist.</exception>
-    /// <exception cref="ColumnDoesNotExistException">If the given table has no column with the given name.</exception>
-    /// <exception cref="CellDoesNotExistException">If there's no cells with the given table, column name, row num, or row key.</exception>
-    public bool ModifyCellValue(int tableId, string columnName, string modifier, int? rowNum = null, string? rowKey = null);
-    
+    /// <exception cref="InvalidNameException">If the name, after stripping all unallowed chars, is null or empty.</exception>
+    /// <exception cref="TableDoesNotExistException">If the table the column is on does not exist.</exception>
+    /// <exception cref="ColumnDoesNotExistException">If there is no column that matches the given id or name + table(id/role id/name).</exception>
+    string RenameColumn(string newColumnName, string? oldColumnName = null, int? columnId = null, int? tableId = null, ulong? roleId = null, string? tableName = null);
+
     /// <summary>
-    /// Modifies the value of the cell.  If numeric type, it will add or subtract the given modifier.  If text, it will simply set the data to the modifier.
+    /// Sets a table's name.  The name must be unique to this table.
     /// </summary>
-    /// <param name="tableName">The name of the table the cell is in.</param>
-    /// <param name="columnName">The name of the column the cell is in.</param>
-    /// <param name="modifier">The modifier to apply to the data.</param>
-    /// <param name="rowNum">Null or the row number of the cell.  Cannot be null if rowKey is null.</param>
-    /// <param name="rowKey">Null or the key associated with the row of the cell.  Cannot be null of rowNum is null.</param>
+    /// <param name="newTableName">The new name of the table.  Must be unique.</param>
+    /// <param name="tableId">Null or the id of the table.  If null, then either roleId or tableName cannot be null.</param>
+    /// <param name="roleId">Null or the role id of the table.  If null, then either roleId or tableName cannot be null.</param>
+    /// <param name="tableName">Null or the name of the table.  If null, then either roleId or tableId cannot be null.</param>
+    /// <returns>[string] The old name of the table.</returns>
+    /// <exception cref="InvalidNameException">If the given name is invalid.</exception>
+    /// <exception cref="TableAlreadyExistsWithNameException">If there is already a table with that name in existance.</exception>
+    /// <exception cref="TableDoesNotExistException">If all arguments are null, or if a table cannot be found with the given argument.</exception>    
+    string RenameTable(string newTableName, int? tableId = null, ulong? roleId = null, string? tableName = null);
+
+    /// <summary>
+    /// Sets the value in a cell.
+    /// </summary>
+    /// <param name="newValue">Value to set the cell data to.</param>
+    /// <param name="tableId">NULL or the id of the table to set the cell value of.  If null, then either roleId or tableName cannot be null.</param>
+    /// <param name="roleId">NULL or the role id of the table set the cell value of.  If null, then either tableId or tableName cannot be null.</param>
+    /// <param name="tableName">NULL or the name of the table set the cell value of.  If null, then either roleId or tableId cannot be null.</param>
+    /// <param name="columnId">NULL or the column id of the cell to set the value of.  If null, then columnName cannot be null.</param>
+    /// <param name="columnName">NULL or the column name of the set to get the value of.  If null, then columnId cannot be null.</param>
+    /// <param name="rowNum">NULL or the row num of the row to get the set value of.  If null, rowKEY cannot be null.</param>
+    /// <param name="rowKey">NULL or the key of the row to get the set value of.  If null, rowNum cannot be null.</param>
     /// <returns></returns>
-    /// <exception cref="InvalidDataException">If the given modifier does not match the cell's data type.</exception>
+    /// <exception cref="InvalidDataException">If the given data type does not match the cell's data type (ie, text when the cell is a numeric).</exception>
     /// <exception cref="TableDoesNotExistException">If the given table does not exist.</exception>
-    /// <exception cref="ColumnDoesNotExistException">If the given table has no column with the given name.</exception>
-    /// <exception cref="CellDoesNotExistException">If there's no cells with the given table, column name, row num, or row key.</exception>
-    public bool ModifyCellValue(string tableName, string columnName, string modifier, int? rowNum = null, string? rowKey = null);
+    /// <exception cref="ColumnDoesNotExistException">If the given column does not exist.</exception>
+    /// <exception cref="InvalidKeyException">If rowNum and rowKey are null</exception>"
+    /// <exception cref="CellDoesNotExistException">If there are no cells with the given rowNum or rowKey.</exception>"
+    string SetCellValue(string newValue, int? tableId = null, ulong? roleId = null, string? tableName = null, int? columnId = null, string? columnName = null, int? rowNum = null, string? rowKey = null);
 
     /// <summary>
-    /// Renames a column.
+    /// Sets the data in the given slot for the given part.
     /// </summary>
-    /// <param name="columnId">The id of the column to rename.</param>
-    /// <param name="newColumnName">The new name to set the column to.</param>
-    /// <returns>A ColumnDefinitionsModel of the column which was renamed.</returns>
-    /// <exception cref="ColumnDoesNotExistException">If a column with the given id doesn't exist.</exception>
-    /// <exception cref="InvalidNameException">If the newColumnName is invalid (only alpha-numeric and '-' allowed.</exception>
-    ColumnDefinitionsModel RenameColumn(int columnId, string newColumnName);
+    /// <param name="embedPartId">The id to set the data for.</param>
+    /// <param name="dataSeq">1, 2, or 3.  If > 3, then 3.  If < 1, then 1.</param>
+    /// <param name="data">The new data to set.</param>
+    /// <exception cref="EinEmbedPartDoesNotExistException">If there's no embed part with the given id.</exception>   
+    void SetEmbedPartData(int embedPartId, int dataSeq, string data);
 
     /// <summary>
-    /// Renames a column.
+    /// Changes the sequence (order) # the part is applied to the display.
     /// </summary>
-    /// <param name="tableId">The id associated with the table.</param>
-    /// <param name="oldColumnName">The current name of the column to rename.</param>
-    /// <param name="newColumnName">The new name to set the column to.  Only '-' and alpha-numeric allowed.</param>
-    /// <returns>A ColumnDefinitionsModel of the column which was renamed.</returns>
-    /// <exception cref="TableDoesNotExistException">If no table exists with the given id.</exception>
-    /// <exception cref="ColumnDoesNotExistException">If the column with the given oldColumnName doesn't exist.</exception>
-    /// <exception cref="InvalidNameException">If the new column name is invalid.</exception>"
-    ColumnDefinitionsModel RenameColumn(int tableId, string oldColumnName, string newColumnName);
+    /// <param name="embedPartId">The id of the part to change the sequence of.</param>
+    /// <param name="newSequenceNum">The new sequence number.</param>
+    /// <exception cref="EinEmbedPartDoesNotExistException">If the part does not exist.</exception>    
+    void SetEmbedPartSequence(int embedPartId, int newSequenceNum);
 
     /// <summary>
-    /// Renames a column.
+    /// Sets a new role id for the table.  No other table can have this role id.
     /// </summary>
-    /// <param name="tableName">The name associated with the table.</param>
-    /// <param name="oldColumnName">The current name of the column to rename.</param>
-    /// <param name="newColumnName">The new name to set the column to.  Only '-' and alpha-numeric allowed.</param>
-    /// <returns>A ColumnDefinitionsModel of the column which was renamed.</returns>
-    /// <exception cref="TableDoesNotExistException">If no table exists with the given name.</exception>
-    /// <exception cref="ColumnDoesNotExistException">If the column with the given oldColumnName doesn't exist.</exception>
-    /// <exception cref="InvalidNameException">If the new column name is invalid.</exception>"    
-    ColumnDefinitionsModel RenameColumn(string tableName, string oldColumnName, string newColumnName);
+    /// <param name="newRoleId"></param>
+    /// <param name="tableId">Null or the id of the table.  If null, then either roleId or tableName cannot be null.</param>
+    /// <param name="roleId">Null or the role id of the table.  If null, then either roleId or tableName cannot be null.</param>
+    /// <param name="tableName">Null or the name of the table.  If null, then either roleId or tableId cannot be null.</param>
+    /// <exception cref="TableDoesNotExistException">If all arguments are null, or if a table cannot be found with the given argument.</exception>
+    /// <exception cref="TableAlreadyExistsWithRoleException">If there's a table which already has this role id.</exception>
+    void SetTableRole(ulong newRoleId, int? tableId = null, ulong? roleId = null, string? tableName = null);
 
     /// <summary>
-    /// Renames a column.
+    /// Updates multiple cells in a row based off the provided updateData dict.  Key:Value should be ColumnName:Data.
     /// </summary>
-    /// <param name="tableRoleId">The role id associated with the table.</param>
-    /// <param name="oldColumnName">The current name of the column to rename.</param>
-    /// <param name="newColumnName">The new name to set the column to.  Only '-' and alpha-numeric allowed.</param>
-    /// <returns>A ColumnDefinitionsModel of the column which was renamed.</returns>
-    /// <exception cref="TableDoesNotExistException">If not able exists with the given id.</exception>
-    /// <exception cref="ColumnDoesNotExistException">If the column with the given oldColumnName doesn't exist.</exception>
-    /// <exception cref="InvalidNameException">If the new column name is invalid.</exception>"
-    ColumnDefinitionsModel RenameColumn(ulong tableRoleId, string oldColumnName, string newColumnName);
-
-    /// <summary>
-    /// Rename a table.
-    /// </summary>
-    /// <param name="tableId">Table id of the table to rename</param>
-    /// <param name="newTableName">Name to set the table to.</param>
-    /// <returns>The old table name.</returns>
-    /// <exception cref="InvalidNameException">Thrown if the the table name is invalid.</exception>
-    /// <exception cref="TableDoesNotExistException">If the table does not exist.</exception>
-    string RenameTable(int tableId, string newTableName);
-
-    /// <summary>
-    /// Rename a table.
-    /// </summary>
-    /// <param name="tableName">Old name of the table</param>
-    /// <param name="newTableName">Name to set the table to.</param>
-    /// <returns>The old table name.</returns>
-    /// <exception cref="InvalidNameException">Thrown if the the table name is invalid.</exception>\
-    /// <exception cref="TableDoesNotExistException">If the table does not exist.</exception>
-    string RenameTable(string tableName, string newTableName);
-
-    /// <summary>
-    /// Rename a table.
-    /// </summary>
-    /// <param name="roleId">Role id of the table to rename</param>
-    /// <param name="newTableName">Name to set the table to.</param>
-    /// <returns>The old table name.</returns>
-    /// <exception cref="InvalidNameException">Thrown if the the table name is invalid.</exception>
-    /// <exception cref="TableDoesNotExistException">If the table does not exist.</exception>
-    string RenameTable(ulong roleId, string newTableName);
-
-    public void RemoveAllEmbedParts(int? tableId = null, ulong? roleId = null, string? tableName = null);
-
-    public void RemoveEmbedPart(int embedPartId);
-
-    public void SetEmbedPartData(int embedPartId, int dataSeq, string data);
-
-    public void SetEmbedPartSequence(int embedPartId, int newSequenceNum);
-
-    /// <summary>
-    /// Changes the role associated with a table.
-    /// </summary>
-    /// <param name="oldRoleId">Role id of the table to re-role</param>
-    /// <param name="newRoleId">New role of the table.</param>
-    /// <exception cref="TableDoesNotExistException">If the table does not exist.</exception>
-    void SetTableRole(ulong oldRoleId, ulong newRoleId);
-
-    /// <summary>
-    /// Sets the value of the cell in the given table and column.
-    /// </summary>
-    /// <param name="tableName">The name of the table the cell is in.</param>
-    /// <param name="columnName">The name of the column the cell is in.</param>
-    /// <param name="data">The data to set the cell to.</param>
-    /// <param name="rowNum">Null or the row number of the cell.  Cannot be null if rowKey is null.</param>
-    /// <param name="rowKey">Null or the key associated with the row of the cell.  Cannot be null of rowNum is null.</param>
-    /// <exception cref="InvalidDataException">If the given modifier does not match the cell's data type.</exception>
+    /// <param name="updateData"></param>
+    /// <param name="tableId">NULL or the id of the table to update the cells of.  If null, then either roleId or tableName cannot be null.</param>
+    /// <param name="roleId">NULL or the role id of the table to update the cells of.  If null, then either tableId or tableName cannot be null.</param>
+    /// <param name="tableName">NULL or the name of the table to update the cells.  If null, then either roleId or tableId cannot be null.</param>
+    /// <param name="rowNum">NULL or the row num of the row to update the cells of.  If null, rowKEY cannot be null.</param>
+    /// <param name="rowKey">NULL or the key of the row to update the cells of.  If null, rowNum cannot be null.</param>
+    /// <exception cref="InvalidDataException">If the given data type does not match the cell's data type (ie, text when the cell is a numeric).</exception>
     /// <exception cref="TableDoesNotExistException">If the given table does not exist.</exception>
-    /// <exception cref="ColumnDoesNotExistException">If the given table has no column with the given name.</exception>
-    /// <exception cref="CellDoesNotExistException">If there's no cells with the given table, column name, row num, or row key.</exception>
-    public void SetCellValue(string tableName, string columnName, string data, int? rowNum = null, string? rowKey = null);
-    
-    /// <summary>
-    /// Sets the value of the cell in the given table and column.
-    /// </summary>
-    /// <param name="roleId">The id of the role associated with the table the cell is in.</param>
-    /// <param name="columnName">The name of the column the cell is in.</param>
-    /// <param name="data">The data to set the cell to.</param>
-    /// <param name="rowNum">Null or the row number of the cell.  Cannot be null if rowKey is null.</param>
-    /// <param name="rowKey">Null or the key associated with the row of the cell.  Cannot be null of rowNum is null.</param>
-    /// <exception cref="InvalidDataException">If the given modifier does not match the cell's data type.</exception>
-    /// <exception cref="TableDoesNotExistException">If the given table does not exist.</exception>
-    /// <exception cref="ColumnDoesNotExistException">If the given table has no column with the given name.</exception>
-    /// <exception cref="CellDoesNotExistException">If there's no cells with the given table, column name, row num, or row key.</exception>
-    public void SetCellValue(ulong roleId, string columnName, string data, int? rowNum = null, string? rowKey = null);
-
-    /// <summary>
-    /// Sets the value of the cell in the given table and column.
-    /// </summary>
-    /// <param name="tableId">The id of the table the cell is in.</param>
-    /// <param name="columnName">The name of the column the cell is in.</param>
-    /// <param name="data">The data to set the cell to.</param>
-    /// <param name="rowNum">Null or the row number of the cell.  Cannot be null if rowKey is null.</param>
-    /// <param name="rowKey">Null or the key associated with the row of the cell.  Cannot be null of rowNum is null.</param>
-    /// <exception cref="InvalidDataException">If the given modifier does not match the cell's data type.</exception>
-    /// <exception cref="TableDoesNotExistException">If the given table does not exist.</exception>
-    /// <exception cref="ColumnDoesNotExistException">If the given table has no column with the given name.</exception>
-    /// <exception cref="CellDoesNotExistException">If there's no cells with the given table, column name, row num, or row key.</exception>
-    public void SetCellValue(int tableId, string columnName, string data, int? rowNum = null, string? rowKey = null);
-
-    /// <summary>
-    /// Updates a row with the given data.
-    /// </summary>
-    /// <param name="tableId">Id of the table to update the row in.</param>
-    /// <param name="columnsDataDict">A dictionary with Key:Value of ColumnName:Data</param>
-    /// <param name="rowNum">The row number of the row to update (if null, must provide a key).</param>
-    /// <param name="key">The key of the row to update (if null, must provide a rollNum).</param>
-    /// <returns>True/False of success.</returns>
-    /// <exception cref="TableDoesNotExistException">If the table does not exist.</exception>
-    /// <exception cref="InvalidDataException">If the given data type does not match the defined data type for the column.</exception>
-    bool UpdateRow(int tableId, Dictionary<string, string> columnsDataDict, int? rowNum = null, string? key = null);
+    /// <exception cref="ColumnDoesNotExistException">If the given column does not exist.</exception>
+    /// <exception cref="InvalidKeyException">If rowNum and rowKey are null</exception>"
+    /// <exception cref="CellDoesNotExistException">If there are no cells with the given rowNum or rowKey.</exception>"
+    /// <exception cref="KeyNotFoundException">If the given keys do not exist in any rows of the table.</exception>
+    void UpdateRow(Dictionary<string, string> updateData, int? tableId = null, ulong? roleId = null, string? tableName = null, int? rowNum = null, string? rowKey = null);
 }

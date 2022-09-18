@@ -1,473 +1,279 @@
 ﻿namespace EinBotDB.DataAccess;
 
+using System;
+
 using EinBotDB.Context;
 using EinBotDB.Models;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
-using System;
-using System.ComponentModel.DataAnnotations;
 
 public partial class EinDataAccess
 {
+    /*****
+     * 
+     * This partial class implementation handles all cell related data access operations.
+     * 
+     ****/
+
+
     /// <summary>
-    /// Add a row to a table.
+    /// Adds a "row" to the given table.  If no dataDict is supplied, or a column isn't present in the dataDict, the default value for the column will be an empty string.
     /// </summary>
-    /// <param name="tableId">The id of the table to add a row to.</param>
-    /// <param name="key">The key of the role.</param>
-    /// <param name="columnsDataDict">A dictionary with Key:Value of ColumnName:Data</param>
-    /// <returns>The row number of the newly insterted row.</returns>
-    /// <exception cref="KeyAlreadyPresentInTableException">If the given key is already present in the table.</exception>
-    /// <exception cref="InvalidDataException">If one of the given data types doesn't match the data type defined by the column.</exception>
-    /// <exception cref="TableDoesNotExistException">If a table with the given tableId does not exist.</exception>"
-    public int AddRow(int tableId, string key, Dictionary<string, string>? columnsDataDict = null)
+    /// <param name="rowKey">The key to give to the row.  This must be unique key for the table.</param>
+    /// <param name="dataDict">Optional Dictionary<string, string>, where the key is the name of the column and the value is the data to put into it.</param>
+    /// <param name="tableId">NULL or the id of the table to make a row in.  If null, then either roleId or tableName cannot be null.</param>
+    /// <param name="roleId">NULL or the role id of the table to make a row in.  If null, then either tableId or tableName cannot be null.</param>
+    /// <param name="tableName">NULL or the name of the table to make a row in.  If null, then either roleId or tableId cannot be null.</param>
+    /// <exception cref="TableDoesNotExistException">If the given table does not exist.</exception>
+    /// <exception cref="InvalidKeyException">If the key is null.</exception>
+    /// <exception cref="KeyAlreadyPresentInTableException">If the key is already present in the table.</exception>"
+    /// <exception cref="InvalidDataException">If the data given in one of the values in the dataDict does not match the column data type.</exception>
+    public void AddRow(
+        string rowKey,
+        Dictionary<string, string>? dataDict = null,
+        int? tableId = null, ulong? roleId = null, string? tableName = null)
     {
+        if (string.IsNullOrEmpty(rowKey)) throw new InvalidKeyException("Key cannot be null.");
+
         using var context = _factory.CreateDbContext();
+        
+        // Make sure the table exists, and get its ID.
+        var tableDefinition = InternalGetTable(context, tableId, roleId, tableName);
+        int tableID = tableDefinition.Id;
 
-        // Make sure the table actually exists.
-        var tableDefinition = context.TableDefinitions.FirstOrDefault(table => table.Id == tableId);
+        // Grab the columns associated with this table.
+        var columnsList = InternalGetColumns(context, tableId, roleId, tableName);
 
-        if (tableDefinition is null) throw new TableDoesNotExistException(tableId);
+        // If there are no columns, there's no row to add.
+        if (columnsList is null || columnsList.Count < 1) return;
 
-        // Make sure there's not an entry with the same key already present.
-        var hasKey = context.Cells.FirstOrDefault(cell => cell.TableDefinitionsId == tableId && cell.RowKey != null && cell.RowKey.Equals(key));
+        // Check if the key is already present, and calculate the insert row if not.
+        var existingCells = context.Cells.Where(cell => cell.TableDefinitionsId == tableId);
 
-        if (hasKey is not null) throw new KeyAlreadyPresentInTableException(tableId, key);
+        if (existingCells.FirstOrDefault(cell => !string.IsNullOrEmpty(cell.RowKey) && cell.RowKey.Equals(rowKey)) is not null) throw new KeyAlreadyPresentInTableException((int)tableId!, rowKey);
 
-        // This will already throw a TableNotFoundException if the table doesn't exist.
-        List<ColumnDefinitionsModel> columnsList = GetColumns(tableId);
+        int insertRow = 1;
 
-        int curRow = 0;
-        var cells = context.Cells.Where(cell => cell.TableDefinitionsId == tableId).ToList();
-        if (cells.Count > 0) curRow = cells.Max(cell => cell.RowNum) + 1;
+        // Calculate the new row number based off the number of "rows" for this table which are already in the cells table.
+        if (existingCells is not null && existingCells.Any()) insertRow = existingCells.Max(cell => cell.RowNum) + 1;
 
-        columnsDataDict ??= new Dictionary<string, string>();
+        // Now we can create the row.
+        List<CellsModel> cells = new();
 
-        foreach(var columnDef in columnsList)
+        dataDict ??= new Dictionary<string, string>();
+
+        foreach(var column in columnsList)
         {
-            var cellModel = new CellsModel()
+            string data = "";
+
+            if (dataDict.ContainsKey(column.Name)) data = dataDict[column.Name];
+
+            var dataType = (DataTypesEnum)column.DataTypesId;
+
+            if (!IsValidValue(dataType, data)) throw new InvalidDataException($"{column.Name} expects type {dataType} received {data}.");
+
+            var cell = new CellsModel
             {
-                TableDefinitionsId = tableId,
-                ColumnDefinitionsId = columnDef.Id,
-                RowKey = key,
-                RowNum = curRow,
+                TableDefinitionsId = tableID,
+                ColumnDefinitionsId = column.Id,
+                RowKey = rowKey,
+                RowNum = insertRow,
+                Data = data,
             };
 
-            if (columnsDataDict.ContainsKey(columnDef.Name))
-            {
-                var data = columnsDataDict[columnDef.Name];
-                DataTypesEnum dataType = (DataTypesEnum)columnDef.DataTypesId;
-
-                if (!IsValidValue(dataType, data)) throw new InvalidDataException($"Column {columnDef.Name} expects {columnDef.DataTypes.Name}.  Received: {data}");
-                
-                cellModel.Data = data;
-            }
-
-            context.Cells.Add(cellModel);
+            cells.Add(cell);
         }
 
-        context.SaveChanges();
-
-        return curRow;
+        context.Cells.AddRange(cells);
+        context.SaveChanges();            
     }
 
     /// <summary>
-    /// Changes the key of a row.
+    /// Changes the key of a given row in a table.
     /// </summary>
-    /// <param name="tableId">The id of the table the row is in.</param>
-    /// <param name="rowNum">The row number of the row.</param>
-    /// <param name="key">The new key to assign.</param>
-    /// <returns>True/False of success.</returns>
+    /// <param name="newKey">The new key for the given row in the table.</param>
+    /// <param name="tableId">NULL or the id of the table to change the row key in.  If null, then either roleId or tableName cannot be null.</param>
+    /// <param name="roleId">NULL or the role id of the table to change the row key in.  If null, then either tableId or tableName cannot be null.</param>
+    /// <param name="tableName">NULL or the name of the table to change the row key in.  If null, then either roleId or tableId cannot be null.</param>
+    /// <param name="rowNum">NULL or the row num of the row to change the key of.  If null, rowKEY cannot be null.</param>
+    /// <param name="rowKey">NULL or the key of the row to change the key of.  If null, rowNum cannot be null.</param>
+    /// <returns></returns>
     /// <exception cref="TableDoesNotExistException">If the given table does not exist.</exception>
-    public bool ChangeKey(int tableId, int rowNum, string key)
+    /// <exception cref="InvalidKeyException">If the new key is null, or if the rowKey and rowNum are both null.</exception>
+    /// <exception cref="CellDoesNotExistException">If there are no cells with the given rowKey and rowNum.</exception>
+    /// <exception cref="KeyAlreadyPresentInTableException">If the table already has cells with the newKey key.</exception>
+    public string ChangeKey(
+        string newKey,
+        int? tableId = null, ulong? roleId = null, string? tableName = null,
+        int? rowNum = null, string? rowKey = null)
     {
+        if (string.IsNullOrEmpty(newKey)) throw new InvalidKeyException(newKey);
+        if (string.IsNullOrEmpty(rowKey) && rowNum is null) throw new InvalidKeyException("rowNum and rowKey can't both be null.");
+
         using var context = _factory.CreateDbContext();
 
-        var tableDefinition = context.TableDefinitions.FirstOrDefault(table => table.Id == tableId);
+        var tableDefinition = InternalGetTable(context, tableId, roleId, tableName);
+        int tableID = tableDefinition.Id;
 
-        if (tableDefinition is null) throw new TableDoesNotExistException(tableId);
+        var tableCells = InternalGetCells(context, tableId: tableID);
 
-        var cells = context.Cells.Where(cell => cell.TableDefinitionsId == tableId && cell.RowNum == rowNum).ToList();
+        // Make sure key isn't already present in the table's cells.
+        var keyTestCell = tableCells.FirstOrDefault(cell => !string.IsNullOrEmpty(cell.RowKey) && cell.RowKey.Equals(newKey));
 
-        foreach(var cell in cells)
+        if (keyTestCell is not null) throw new KeyAlreadyPresentInTableException(tableID, newKey);
+
+        // Get the cells associated with the given rowNum or rowKey.
+        Func<CellsModel, bool> searchFunc;
+
+        if (rowNum is not null) searchFunc = (cell => cell.RowNum == rowNum);
+        else searchFunc = (cell => !string.IsNullOrEmpty(cell.RowKey) && !cell.RowKey.Equals(rowKey));
+
+        var cellList = tableCells.Where(searchFunc);
+
+        // Make sure we actually have cells.
+        if (cellList is null || !cellList.Any()) throw new CellDoesNotExistException();
+
+        // Set the new key.
+        string oldKey = cellList.First().RowKey ?? "";
+
+        foreach(var cell in cellList)
         {
-            cell.RowKey = key;
+            cell.RowKey = newKey;
         }
 
         context.SaveChanges();
 
-        return true;
+        return oldKey;
     }
 
     /// <summary>
-    /// Removes a row from a table.
+    /// Deletes a given row from the table.
     /// </summary>
-    /// <param name="tableId">The table to remove the row from.</param>
-    /// <param name="rowNum">The number of the row to remove (if null, must provide a key).</param>
-    /// <param name="key">The key of the row to remove (if null, must provide a rowNum).</param>
-    /// <returns>True/False of success.</returns>
-    /// <exception cref="TableDoesNotExistException">If the table does not exist.</exception>
-    public bool DeleteRow(int tableId, int? rowNum = null, string? key = null)
+    /// <param name="tableId">NULL or the id of the table to delete the row in.  If null, then either roleId or tableName cannot be null.</param>
+    /// <param name="roleId">NULL or the role id of the table to delete the row in.  If null, then either tableId or tableName cannot be null.</param>
+    /// <param name="tableName">NULL or the name of the table to delete the row in.  If null, then either roleId or tableId cannot be null.</param>
+    /// <param name="rowNum">NULL or the row num of the row to delete the row in.  If null, rowKEY cannot be null.</param>
+    /// <param name="rowKey">NULL or the key of the row to delete the row in.  If null, rowNum cannot be null.</param>
+    /// <exception cref="InvalidKeyException"></exception>
+    /// <exception cref="TableDoesNotExistException">If the given table does not exist.</exception>
+    public void DeleteRow(
+        int? tableId = null, ulong? roleId = null, string? tableName = null,
+        int? rowNum = null, string? rowKey = null)
     {
-        if (rowNum is null && key is null) return false;
+        if (rowNum is null && string.IsNullOrEmpty(rowKey)) throw new InvalidKeyException("RowNum and RowKey can't both be null.");
 
         using var context = _factory.CreateDbContext();
 
-        var tableDefinition = context.TableDefinitions.FirstOrDefault(table => table.Id == tableId);
+        var tableDefinition = InternalGetTable(context, tableId, roleId, tableName);
+        int tableID = tableDefinition.Id;
 
-        if (tableDefinition is null) throw new TableDoesNotExistException(tableId);
+        var cellsList = InternalGetCells(context, tableId: tableId, rowNum: rowNum, rowKey: rowKey);
 
-        var cells = context.Cells.Where(cell => cell.TableDefinitionsId == tableId);
-
-        if (rowNum is null) cells = cells.Where(cell => !string.IsNullOrEmpty(cell.RowKey) && cell.RowKey.Equals(key));
-        else cells = cells.Where(cell => cell.RowNum == rowNum);
-
-        if (cells is null || cells.Count() < 1)
-        {
-            if (rowNum is null) throw new InvalidKeyException(tableId, key!);
-            throw new InvalidRowNumException(tableId, (int)rowNum);
-        }
-
-        foreach(var cell in cells)
+        foreach(var cell in cellsList)
         {
             context.Cells.Remove(cell);
         }
 
         context.SaveChanges();
-
-        return true;
     }
 
     /// <summary>
-    /// Updates a row with the given data.
+    /// Retrieves the value of a cell from the given table, column, and row.
     /// </summary>
-    /// <param name="tableId">Id of the table to update the row in.</param>
-    /// <param name="columnsDataDict">A dictionary with Key:Value of ColumnName:Data</param>
-    /// <param name="rowNum">The row number of the row to update (if null, must provide a key).</param>
-    /// <param name="key">The key of the row to update (if null, must provide a rollNum).</param>
-    /// <returns>True/False of success.</returns>
-    /// <exception cref="TableDoesNotExistException">If the table does not exist.</exception>
-    /// <exception cref="InvalidDataException">If the given data type does not match the defined data type for the column.</exception>
-    public bool UpdateRow(int tableId, Dictionary<string, string> columnsDataDict, int? rowNum = null, string? key = null)
+    /// <param name="tableId">NULL or the id of the table to get the cell value of.  If null, then either roleId or tableName cannot be null.</param>
+    /// <param name="roleId">NULL or the role id of the table get the cell value of.  If null, then either tableId or tableName cannot be null.</param>
+    /// <param name="tableName">NULL or the name of the table get the cell value of.  If null, then either roleId or tableId cannot be null.</param>
+    /// <param name="columnId">NULL or the column id of the cell to get the value of.  If null, then columnName cannot be null.</param>
+    /// <param name="columnName">NULL or the column name of the cell to get the value of.  If null, then columnId cannot be null.</param>
+    /// <param name="rowNum">NULL or the row num of the row to get the cell value of.  If null, rowKEY cannot be null.</param>
+    /// <param name="rowKey">NULL or the key of the row to get the cell value of.  If null, rowNum cannot be null.</param>
+    /// <returns>A string of the cell's value.  If the value is null, then it will return an empty string.</returns>
+    /// <exception cref="TableDoesNotExistException">If the given table does not exist.</exception>
+    /// <exception cref="ColumnDoesNotExistException">If the given column does not exist.</exception>
+    /// <exception cref="CellDoesNotExistException">If the given cell does not exist.</exception>
+    public string GetCellValue(
+        int? tableId = null, ulong? roleId = null, string? tableName = null,
+        int? columnId = null, string? columnName = null,
+        int? rowNum = null, string? rowKey = null)
     {
-        if (rowNum is null && key is null) return false;
+        CellGateKeep(tableId, roleId, tableName, columnId, columnName, rowNum, rowKey);
 
         using var context = _factory.CreateDbContext();
 
-        var tableDefinition = context.TableDefinitions.FirstOrDefault(table => table.Id == tableId);
+        var cell = InternalGetCell(context, columnName, columnId, tableId, roleId, tableName, rowNum, rowKey);
 
-        if (tableDefinition == null) throw new TableDoesNotExistException(tableId);
+        if (cell is null) throw new CellDoesNotExistException();
 
-        List<CellsModel> cells;
+        return cell.Data ?? "";
+    }
 
-        if (rowNum is null) cells = context.Cells.Where(cell =>
-                                                    cell.TableDefinitionsId == tableId
-                                                    && !string.IsNullOrEmpty(cell.RowKey)
-                                                    && cell.RowKey.Equals(key))
-                                                 .ToList();
+    /// <summary>
+    /// Checks if the given data matches the given data type.
+    /// </summary>
+    /// <param name="dataType">The data type to check the data against.</param>
+    /// <param name="data">The data to check against the data type.</param>
+    /// <returns>True if data matches the dataType, false otherwise.</returns>
+    public bool IsValidValue(DataTypesEnum dataType, string data)
+    {
+        if (string.IsNullOrEmpty(data)) return true;
 
-        else cells = context.Cells.Where(cell => cell.TableDefinitionsId == tableId && cell.RowNum == rowNum).ToList();
-
-        var columnsList = context.ColumnDefinitions.Where(column => column.TableDefinitionsId == tableDefinition.Id);
-
-        // TODO
-        foreach(var colName in columnsDataDict.Keys)
+        switch(dataType)
         {
-
+            case DataTypesEnum.Text:
+            case DataTypesEnum.ListText:
+                return true;
+            case DataTypesEnum.Int:
+            case DataTypesEnum.ListInt:
+                return int.TryParse(data, out _);
+            case DataTypesEnum.Decimal:
+            case DataTypesEnum.ListDecimal:
+                return double.TryParse(data, out _);
+            case DataTypesEnum.UserId:
+            case DataTypesEnum.ListUserId:
+            case DataTypesEnum.GuildId:
+            case DataTypesEnum.ListGuildId:
+            case DataTypesEnum.ChannelId:
+            case DataTypesEnum.ListChannelId:
+                return ulong.TryParse(data, out _);
+            default: return false;
         }
-
-        foreach(var cell in cells)
-        {
-            var column = columnsList.FirstOrDefault(column => column.Id == cell.ColumnDefinitionsId);
-
-            if (column is null) continue;
-
-            var columnDataType = (DataTypesEnum)column.DataTypesId;
-
-            if (columnsDataDict.ContainsKey(column.Name))
-            {
-                var data = columnsDataDict[column.Name];
-
-                if (!IsValidValue(columnDataType, data)) throw new InvalidDataException($"{column.Name} expects {columnDataType}.  Received: {data}"); ;
-
-                cell.Data = data;
-            }
-        }
-
-        context.SaveChanges();
-
-        return true;
     }
 
     /// <summary>
-    /// Retrieves the data of the cell in the given column of the given table.
+    /// Modifies the value in a cell.  If the cell data type is a string, it will replace it.  If numeric, it will add or subtract.
     /// </summary>
-    /// <param name="tableName">The name of the table the cell is in.</param>
-    /// <param name="columnName"></param>
-    /// <param name="dataType">OUT the data type associated with the cell.</param>
-    /// <param name="rowNum">Null or the row number of the cell.  Cannot be null if rowKey is null.</param>
-    /// <param name="rowKey">Null or the key associated with the row of the cell.  Cannot be null of rowNum is null.</param>
-    /// <returns>The data in the given cell.</returns>
-    /// <exception cref="InvalidDataException">If unable to determine the cell's data type.</exception>
-    /// <exception cref="TableDoesNotExistException">If the given table does not exist.</exception>
-    /// <exception cref="ColumnDoesNotExistException">If the given table has no column with the given name.</exception>
-    /// <exception cref="CellDoesNotExistException">If there's no cells with the given table, column name, row num, or row key.</exception>
-    public string? GetCellValue(string tableName, string columnName, out DataTypesEnum? dataType, int? rowNum = null, string? rowKey = null)
-    {
-        return GetCellValueHelper(columnName, out dataType, tableName: tableName, rowNum: rowNum, rowKey: rowKey);
-    }
-
-    /// <summary>
-    /// Retrieves the data of the cell in the given column of the given table.
-    /// </summary>
-    /// <param name="roleId">The id of the role associated with the table the cell is in.</param>
-    /// <param name="columnName"></param>
-    /// <param name="dataType">OUT the data type associated with the cell.</param>
-    /// <param name="rowNum">Null or the row number of the cell.  Cannot be null if rowKey is null.</param>
-    /// <param name="rowKey">Null or the key associated with the row of the cell.  Cannot be null of rowNum is null.</param>
-    /// <returns>The data in the given cell.</returns>
-    /// <exception cref="InvalidDataException">If unable to determine the cell's data type.</exception>
-    /// <exception cref="TableDoesNotExistException">If the given table does not exist.</exception>
-    /// <exception cref="ColumnDoesNotExistException">If the given table has no column with the given name.</exception>
-    /// <exception cref="CellDoesNotExistException">If there's no cells with the given table, column name, row num, or row key.</exception>
-    public string? GetCellValue(ulong roleId, string columnName, out DataTypesEnum? dataType, int? rowNum = null, string? rowKey = null)
-    {
-        return GetCellValueHelper(columnName, out dataType, roleId: roleId, rowNum: rowNum, rowKey: rowKey);
-    }
-
-    /// <summary>
-    /// Retrieves the data of the cell in the given column of the given table.
-    /// </summary>
-    /// <param name="tableId">The id of the table the cell is in.</param>
-    /// <param name="columnName"></param>
-    /// <param name="dataType">OUT the data type associated with the cell.</param>
-    /// <param name="rowNum">Null or the row number of the cell.  Cannot be null if rowKey is null.</param>
-    /// <param name="rowKey">Null or the key associated with the row of the cell.  Cannot be null of rowNum is null.</param>
-    /// <returns>The data in the given cell.</returns>
-    /// <exception cref="InvalidDataException">If unable to determine the cell's data type.</exception>
-    /// <exception cref="TableDoesNotExistException">If the given table does not exist.</exception>
-    /// <exception cref="ColumnDoesNotExistException">If the given table has no column with the given name.</exception>
-    /// <exception cref="CellDoesNotExistException">If there's no cells with the given table, column name, row num, or row key.</exception>
-    public string? GetCellValue(int tableId, string columnName, out DataTypesEnum? dataType, int? rowNum = null, string? rowKey = null)
-    {
-        return GetCellValueHelper(columnName, out dataType, tableId: tableId, rowNum: rowNum, rowKey: rowKey);
-    }
-
-    public string? GetCellValue(string columnName, out DataTypesEnum? dataType,
-                                int? tableId = null, ulong? roleId = null, string? tableName = null,
-                                int? rowNum, string? rowKey = null)
-    {
-
-    }
-
-    /// <summary>
-    /// Sets the value of the cell in the given table and column.
-    /// </summary>
-    /// <param name="tableName">The name of the table the cell is in.</param>
-    /// <param name="columnName">The name of the column the cell is in.</param>
-    /// <param name="data">The data to set the cell to.</param>
-    /// <param name="rowNum">Null or the row number of the cell.  Cannot be null if rowKey is null.</param>
-    /// <param name="rowKey">Null or the key associated with the row of the cell.  Cannot be null of rowNum is null.</param>
-    /// <exception cref="InvalidDataException">If the given modifier does not match the cell's data type.</exception>
-    /// <exception cref="TableDoesNotExistException">If the given table does not exist.</exception>
-    /// <exception cref="ColumnDoesNotExistException">If the given table has no column with the given name.</exception>
-    /// <exception cref="CellDoesNotExistException">If there's no cells with the given table, column name, row num, or row key.</exception>
-    public void SetCellValue(string tableName, string columnName, string data, int? rowNum = null, string? rowKey = null)
-    {
-        SetCellValueHelper(data, columnName, tableName: tableName, rowNum: rowNum, rowKey: rowKey);
-    }
-
-    /// <summary>
-    /// Sets the value of the cell in the given table and column.
-    /// </summary>
-    /// <param name="roleId">The id of the role associated with the table the cell is in.</param>
-    /// <param name="columnName">The name of the column the cell is in.</param>
-    /// <param name="data">The data to set the cell to.</param>
-    /// <param name="rowNum">Null or the row number of the cell.  Cannot be null if rowKey is null.</param>
-    /// <param name="rowKey">Null or the key associated with the row of the cell.  Cannot be null of rowNum is null.</param>
-    /// <exception cref="InvalidDataException">If the given modifier does not match the cell's data type.</exception>
-    /// <exception cref="TableDoesNotExistException">If the given table does not exist.</exception>
-    /// <exception cref="ColumnDoesNotExistException">If the given table has no column with the given name.</exception>
-    /// <exception cref="CellDoesNotExistException">If there's no cells with the given table, column name, row num, or row key.</exception>
-    public void SetCellValue(ulong roleId, string columnName, string data, int? rowNum = null, string? rowKey = null)
-    {
-        SetCellValueHelper(data, columnName, roleId: roleId, rowNum: rowNum, rowKey: rowKey);
-    }
-
-    /// <summary>
-    /// Sets the value of the cell in the given table and column.
-    /// </summary>
-    /// <param name="tableId">The id of the table the cell is in.</param>
-    /// <param name="columnName">The name of the column the cell is in.</param>
-    /// <param name="data">The data to set the cell to.</param>
-    /// <param name="rowNum">Null or the row number of the cell.  Cannot be null if rowKey is null.</param>
-    /// <param name="rowKey">Null or the key associated with the row of the cell.  Cannot be null of rowNum is null.</param>
-    /// <exception cref="InvalidDataException">If the given modifier does not match the cell's data type.</exception>
-    /// <exception cref="TableDoesNotExistException">If the given table does not exist.</exception>
-    /// <exception cref="ColumnDoesNotExistException">If the given table has no column with the given name.</exception>
-    /// <exception cref="CellDoesNotExistException">If there's no cells with the given table, column name, row num, or row key.</exception>
-    public void SetCellValue(int tableId, string columnName, string data, int? rowNum = null, string? rowKey = null)
-    {
-        SetCellValueHelper(data, columnName, tableId: tableId, rowNum: rowNum, rowKey: rowKey);
-    }
-
-    /// <summary>
-    /// Modifies the value of the cell.  If numeric type, it will add or subtract the given modifier.  If text, it will simply set the data to the modifier.
-    /// </summary>
-    /// <param name="roleId">The id of the role associated with the table the cell is in.</param>
-    /// <param name="columnName">The name of the column the cell is in.</param>
-    /// <param name="modifier">The modifier to apply to the data.</param>
-    /// <param name="rowNum">Null or the row number of the cell.  Cannot be null if rowKey is null.</param>
-    /// <param name="rowKey">Null or the key associated with the row of the cell.  Cannot be null of rowNum is null.</param>
+    /// <param name="modifier">Value to modify the cell data by.</param>
+    /// <param name="tableId">NULL or the id of the table to modify the cell value of.  If null, then either roleId or tableName cannot be null.</param>
+    /// <param name="roleId">NULL or the role id of the table modify the cell value of.  If null, then either tableId or tableName cannot be null.</param>
+    /// <param name="tableName">NULL or the name of the table modify the cell value of.  If null, then either roleId or tableId cannot be null.</param>
+    /// <param name="columnId">NULL or the column id of the cell to modify the value of.  If null, then columnName cannot be null.</param>
+    /// <param name="columnName">NULL or the column name of the modify to get the value of.  If null, then columnId cannot be null.</param>
+    /// <param name="rowNum">NULL or the row num of the row to get the modify value of.  If null, rowKEY cannot be null.</param>
+    /// <param name="rowKey">NULL or the key of the row to get the modify value of.  If null, rowNum cannot be null.</param>
     /// <returns></returns>
-    /// <exception cref="InvalidDataException">If the given modifier does not match the cell's data type.</exception>
+    /// <exception cref="InvalidDataException">If the given data type does not match the cell's data type (ie, text when the cell is a numeric).</exception>
     /// <exception cref="TableDoesNotExistException">If the given table does not exist.</exception>
-    /// <exception cref="ColumnDoesNotExistException">If the given table has no column with the given name.</exception>
-    /// <exception cref="CellDoesNotExistException">If there's no cells with the given table, column name, row num, or row key.</exception>
-    public bool ModifyCellValue(ulong roleId, string columnName, string modifier, int? rowNum = null, string? rowKey = null)
+    /// <exception cref="ColumnDoesNotExistException">If the given column does not exist.</exception>
+    /// <exception cref="InvalidKeyException">If rowNum and rowKey are null</exception>"
+    /// <exception cref="CellDoesNotExistException">If there are no cells with the given rowNum or rowKey.</exception>"
+    public bool ModifyCellValue(
+        string modifier,
+        int? tableId = null, ulong? roleId = null, string? tableName = null,
+        int? columnId = null, string? columnName = null,
+        int? rowNum = null, string? rowKey = null)
     {
-        return ModifyCellValueHelper(modifier, columnName, roleId: roleId, rowNum: rowNum, rowKey: rowKey);
-    }
-
-    /// <summary>
-    /// Modifies the value of the cell.  If numeric type, it will add or subtract the given modifier.  If text, it will simply set the data to the modifier.
-    /// </summary>
-    /// <param name="tableId">The id of the table the cell is in.</param>
-    /// <param name="columnName">The name of the column the cell is in.</param>
-    /// <param name="modifier">The modifier to apply to the data.</param>
-    /// <param name="rowNum">Null or the row number of the cell.  Cannot be null if rowKey is null.</param>
-    /// <param name="rowKey">Null or the key associated with the row of the cell.  Cannot be null of rowNum is null.</param>
-    /// <returns></returns>
-    /// <exception cref="InvalidDataException">If the given modifier does not match the cell's data type.</exception>
-    /// <exception cref="TableDoesNotExistException">If the given table does not exist.</exception>
-    /// <exception cref="ColumnDoesNotExistException">If the given table has no column with the given name.</exception>
-    /// <exception cref="CellDoesNotExistException">If there's no cells with the given table, column name, row num, or row key.</exception>
-    public bool ModifyCellValue(int tableId, string columnName, string modifier, int? rowNum = null, string? rowKey = null)
-    {
-        return ModifyCellValueHelper(modifier, columnName, tableId: tableId, rowNum: rowNum, rowKey: rowKey);
-    }
-
-    /// <summary>
-    /// Modifies the value of the cell.  If numeric type, it will add or subtract the given modifier.  If text, it will simply set the data to the modifier.
-    /// </summary>
-    /// <param name="tableName">The name of the table the cell is in.</param>
-    /// <param name="columnName">The name of the column the cell is in.</param>
-    /// <param name="modifier">The modifier to apply to the data.</param>
-    /// <param name="rowNum">Null or the row number of the cell.  Cannot be null if rowKey is null.</param>
-    /// <param name="rowKey">Null or the key associated with the row of the cell.  Cannot be null of rowNum is null.</param>
-    /// <returns></returns>
-    /// <exception cref="InvalidDataException">If the given modifier does not match the cell's data type.</exception>
-    /// <exception cref="TableDoesNotExistException">If the given table does not exist.</exception>
-    /// <exception cref="ColumnDoesNotExistException">If the given table has no column with the given name.</exception>
-    /// <exception cref="CellDoesNotExistException">If there's no cells with the given table, column name, row num, or row key.</exception>
-    public bool ModifyCellValue(string tableName, string columnName, string modifier, int? rowNum = null, string? rowKey = null)
-    {
-        return ModifyCellValueHelper(modifier, columnName, tableName: tableName, rowNum: rowNum, rowKey: rowKey);
-    }
-
-    /// <summary>
-    /// Helper func for getting the value of a cell.
-    /// </summary>
-    /// <param name="columnName"></param>
-    /// <param name="dataType"></param>
-    /// <param name="tableId"></param>
-    /// <param name="roleId"></param>
-    /// <param name="tableName"></param>
-    /// <param name="rowNum"></param>
-    /// <param name="rowKey"></param>
-    /// <returns></returns>
-    /// <exception cref="TableDoesNotExistException">If the given table does not exist.</exception>
-    /// <exception cref="ColumnDoesNotExistException">If the given column does not exist on the table.</exception>
-    /// <exception cref="CellDoesNotExistException">If there's no cell in the given column.</exception>
-    /// <exception cref="InvalidDataException">If it's unable to determine the datatype of the cell.</exception>
-    private string? GetCellValueHelper(string columnName, out DataTypesEnum? dataType, int? tableId = null, ulong? roleId = null, string? tableName = null, int? rowNum = null, string? rowKey = null)
-    {
-        dataType = null;
-        if (string.IsNullOrEmpty(columnName)) throw new ColumnDoesNotExistException("Column name cannot be null.");
+        CellGateKeep(tableId, roleId, tableName, columnId, columnName, rowNum, rowKey);
 
         using var context = _factory.CreateDbContext();
 
-        if (!GetCellColumnTableType(context, columnName,
-            out CellsModel cellsModel, out TableDefinitionsModel tableDefinition, out ColumnDefinitionsModel columnDefinition, out DataTypesEnum? dType,
-            tableName, tableId, roleId, rowNum, rowKey)) throw new CellDoesNotExistException();
+        var columnDefinition = InternalGetColumn(context, columnName, columnId, tableId, roleId, tableName);
 
-        if (dType is null) throw new InvalidDataException("Unable to parse column data type.");
+        var tableID = columnDefinition.TableDefinitionsId;
+        var columnID = columnDefinition.Id;
+        var dataType = (DataTypesEnum)columnDefinition.DataTypesId;
 
-        dataType = (DataTypesEnum)dType;
+        if (!IsValidValue(dataType, modifier)) throw new InvalidDataException($"Cell expects {dataType}.  Received {modifier}.");
 
-        return cellsModel.Data;
-    }
-
-    /// <summary>
-    /// Helper func for setting a cell value.
-    /// </summary>
-    /// <param name="data"></param>
-    /// <param name="columnName"></param>
-    /// <param name="tableId"></param>
-    /// <param name="roleId"></param>
-    /// <param name="tableName"></param>
-    /// <param name="rowNum"></param>
-    /// <param name="rowKey"></param>
-    /// <returns></returns>
-    /// <exception cref="InvalidDataException">If the given data does not match the cell's data type.</exception>
-    /// <exception cref="TableDoesNotExistException">If the given table does not exist.</exception>
-    /// <exception cref="ColumnDoesNotExistException">If the given table has no column with the given name.</exception>
-    /// <exception cref="CellDoesNotExistException">If there's no cells with the given table, column name, row num, or row key.</exception>
-    private void SetCellValueHelper(string data, string columnName, int? tableId = null, ulong? roleId = null, string? tableName = null, int? rowNum = null, string? rowKey = null)
-    {
-        if (string.IsNullOrEmpty(columnName)) throw new ColumnDoesNotExistException("Column names cannot be null.");
-
-        using var context = _factory.CreateDbContext();
-
-        if (!GetCellColumnTableType(context, columnName,
-                out CellsModel cellsModel, out TableDefinitionsModel tableDefinition, out ColumnDefinitionsModel columnDefinition, out DataTypesEnum? dType,
-                tableName, tableId, roleId, rowNum, rowKey))
-        {
-            throw new CellDoesNotExistException();
-        }
-
-        if (dType is null) throw new InvalidDataException($"Unable to discern data type of cell.");
-
-        DataTypesEnum dataType = (DataTypesEnum)dType;
-
-        if (!IsValidValue(dataType, data)) throw new InvalidDataException($"Invalid data type for table {tableDefinition.Id}, column {columnDefinition.Id}.  Was expecting {dataType}, received {data}.");
-
-        cellsModel.Data = data;
-
-        context.SaveChanges();
-    }
-
-    /// <summary>
-    /// Helper func for modifying cell values.
-    /// </summary>
-    /// <param name="modifier"></param>
-    /// <param name="columnName"></param>
-    /// <param name="tableId"></param>
-    /// <param name="roleId"></param>
-    /// <param name="tableName"></param>
-    /// <param name="rowNum"></param>
-    /// <param name="rowKey"></param>
-    /// <returns></returns>
-    /// <exception cref="InvalidDataException">If the given modifier does not match the cell's data type.</exception>
-    /// <exception cref="TableDoesNotExistException">If the given table does not exist.</exception>
-    /// <exception cref="ColumnDoesNotExistException">If the given table has no column with the given name.</exception>
-    /// <exception cref="CellDoesNotExistException">If there's no cells with the given table, column name, row num, or row key.</exception>
-    private bool ModifyCellValueHelper(string modifier, string columnName, int? tableId = null, ulong? roleId = null, string? tableName = null, int? rowNum = null, string? rowKey = null)
-    {
-        if (string.IsNullOrEmpty(modifier)) return false;
-        if (string.IsNullOrEmpty(columnName)) return false;
-
-        using var context = _factory.CreateDbContext();
-
-        if (!GetCellColumnTableType(context, columnName,
-            out CellsModel cellsModel, out TableDefinitionsModel tableDefinition, out ColumnDefinitionsModel columnDefinition, out DataTypesEnum? dType,
-            tableName, tableId, roleId, rowNum, rowKey)) return false;
-
-        if (dType is null) return false;
-
-        DataTypesEnum dataType = (DataTypesEnum)dType;
-
-        if (!IsValidValue(dataType, modifier)) throw new InvalidDataException($"Table id {tableDefinition!.Id} column {columnDefinition!.Id} is type {dataType}.  Input: {modifier}");
-
-        var data = cellsModel!.Data;
+        var cellsModel = InternalGetCell(context, tableId: tableID, columnId: columnID, rowNum: rowNum, rowKey: rowKey);
+        var data = cellsModel.Data;
 
         switch (dataType)
         {
@@ -489,7 +295,7 @@ public partial class EinDataAccess
                 double decimalModifier;
 
                 if (string.IsNullOrEmpty(data)) data = "0";
-                if (string.IsNullOrEmpty (modifier)) modifier = "0";
+                if (string.IsNullOrEmpty(modifier)) modifier = "0";
 
                 if (!double.TryParse(data, out decimalVal) || !double.TryParse(modifier, out decimalModifier)) return false;
 
@@ -521,109 +327,213 @@ public partial class EinDataAccess
     }
 
     /// <summary>
-    /// Grabs a cell, its column, table, and data type given a column name, (role ID / table Name / table ID).
+    /// Sets the value in a cell.
     /// </summary>
-    /// <param name="context">DB Context we're operating in.</param>
-    /// <param name="columnName">The name of the column the cell is in.</param>
-    /// <param name="cellsModel">OUT CellsModel object.</param>
-    /// <param name="tableDefinition">OUT TableDefinitionModel object.</param>
-    /// <param name="columnDefinition">OUT ColumnDefinitionModel object.</param>
-    /// <param name="dataType">OUT DataTypesEnum object.</param>
-    /// <param name="tableName">Null or the name of the table. Must not be null if tableId and roleId are null.</param>
-    /// <param name="tableId">Null or the id of the table.  Must not be null if tableName and roleId are null.</param>
-    /// <param name="roleId">Null or the role id associated with the table.  Must not be null if tableId and tableName are null.</param>
-    /// <param name="rowNum">Null or the row number of the cell.  Must not be null if rowKey is null.</param>
-    /// <param name="rowKey">Null or the key associated with the cell's row.  Must not be null of rowNum is null.</param>
-    /// <returns></returns>
+    /// <param name="newValue">Value to set the cell data to.</param>
+    /// <param name="tableId">NULL or the id of the table to set the cell value of.  If null, then either roleId or tableName cannot be null.</param>
+    /// <param name="roleId">NULL or the role id of the table set the cell value of.  If null, then either tableId or tableName cannot be null.</param>
+    /// <param name="tableName">NULL or the name of the table set the cell value of.  If null, then either roleId or tableId cannot be null.</param>
+    /// <param name="columnId">NULL or the column id of the cell to set the value of.  If null, then columnName cannot be null.</param>
+    /// <param name="columnName">NULL or the column name of the set to get the value of.  If null, then columnId cannot be null.</param>
+    /// <param name="rowNum">NULL or the row num of the row to get the set value of.  If null, rowKEY cannot be null.</param>
+    /// <param name="rowKey">NULL or the key of the row to get the set value of.  If null, rowNum cannot be null.</param>
+    /// <returns>A string with the old value.</returns>
+    /// <exception cref="InvalidDataException">If the given data type does not match the cell's data type (ie, text when the cell is a numeric).</exception>
     /// <exception cref="TableDoesNotExistException">If the given table does not exist.</exception>
-    /// <exception cref="ColumnDoesNotExistException">If the given table has no column with the given name.</exception>
-    /// <exception cref="CellDoesNotExistException">If there's no cells with the given table, column name, row num, or row key.</exception>
-    private bool GetCellColumnTableType(EinDataContext context, string columnName, out CellsModel? cellsModel,
-                        out TableDefinitionsModel? tableDefinition, out ColumnDefinitionsModel? columnDefinition,
-                        out DataTypesEnum? dataType, string? tableName = null,
-                        int? tableId = null, ulong? roleId = null,
-                        int? rowNum = null, string? rowKey = null)
+    /// <exception cref="ColumnDoesNotExistException">If the given column does not exist.</exception>
+    /// <exception cref="InvalidKeyException">If rowNum and rowKey are null</exception>"
+    /// <exception cref="CellDoesNotExistException">If there are no cells with the given rowNum or rowKey.</exception>"
+    public string SetCellValue(
+        string newValue,
+        int? tableId = null, ulong? roleId = null, string? tableName = null,
+        int? columnId = null, string? columnName = null,
+        int? rowNum = null, string? rowKey = null)
     {
-        cellsModel = null;
-        tableDefinition = null;
-        columnDefinition = null;
-        dataType = null;
+        CellGateKeep(tableId, roleId, tableName, columnId, columnName, rowNum, rowKey);
 
-        if (rowNum is null && string.IsNullOrEmpty(rowKey)) return false;
-        if (tableId is null && roleId is null && string.IsNullOrEmpty(tableName)) return false;
+        using var context = _factory.CreateDbContext();
 
-        Func<TableDefinitionsModel, bool> searchFunc = (table => table.Id == tableId);
+        var columnDefinition = InternalGetColumn(context, columnName, columnId, tableId, roleId, tableName);
 
-        if (roleId is not null)
-        {
-            searchFunc = (table => table.RoleId == roleId);
-        }
-        else if (!string.IsNullOrEmpty(tableName))
-        {
-            searchFunc = (table => table.Name.Equals(tableName));
+        var tableID = columnDefinition.TableDefinitionsId;
+        var columnID = columnDefinition.Id;
+        var dataType = (DataTypesEnum)columnDefinition.DataTypesId;
 
-        }
+        var cell = InternalGetCell(context, columnId: columnID, tableId: tableID, rowNum: rowNum, rowKey: rowKey);
 
-        tableDefinition = context.TableDefinitions.FirstOrDefault(searchFunc);
+        if (cell is null) throw new CellDoesNotExistException();
 
-        if (tableDefinition is null) throw new TableDoesNotExistException();
+        if (!IsValidValue(dataType, newValue)) throw new InvalidDataException($"Cell expects {dataType}.  Received: {newValue}.");
 
-        tableId = tableDefinition.Id;
+        var oldValue = cell.Data ?? "";
 
-        columnDefinition = context.ColumnDefinitions.FirstOrDefault(col => col.TableDefinitionsId == tableId && col.Name.Equals(columnName));
-        
-        if (columnDefinition is null) throw new ColumnDoesNotExistException(tableDefinition.Name, columnName);
+        cell.Data = newValue;
 
-        var columnDefinitionId = columnDefinition.Id;
-        dataType = (DataTypesEnum)columnDefinition.DataTypesId;
+        context.SaveChanges();
 
-        Func<CellsModel, bool> cellSearchFunc = (cell => cell.TableDefinitionsId == tableId
-                                                        && cell.ColumnDefinitionsId == columnDefinitionId
-                                                        && cell.RowKey is not null
-                                                        && cell.RowKey.Equals(rowKey));
-
-        if (rowNum is not null)
-        {
-            cellSearchFunc = (cell => cell.TableDefinitionsId == tableId
-                                        && cell.ColumnDefinitionsId == columnDefinitionId
-                                        && cell.RowNum == rowNum);
-        }
-
-        cellsModel = context.Cells.FirstOrDefault(cellSearchFunc);
-
-        if (cellsModel is null) { if (rowNum is not null) throw new CellDoesNotExistException(tableId, columnName, rowNum); else throw new CellDoesNotExistException(tableId, columnName, rowKey); }
-
-        return true;
-    } 
-
+        return oldValue;
+    }
 
     /// <summary>
-    /// Checks if the given data matches the given data type.
+    /// Updates multiple cells in a row based off the provided updateData dict.  Key:Value should be ColumnName:Data.
     /// </summary>
-    /// <param name="dataType">The data type to check the data against.</param>
-    /// <param name="data">The data to check against the data type.</param>
-    /// <returns>True if data matches the dataType, false otherwise.</returns>
-    public bool IsValidValue(DataTypesEnum dataType, string data)
+    /// <param name="updateData"></param>
+    /// <param name="tableId">NULL or the id of the table to update the cells of.  If null, then either roleId or tableName cannot be null.</param>
+    /// <param name="roleId">NULL or the role id of the table to update the cells of.  If null, then either tableId or tableName cannot be null.</param>
+    /// <param name="tableName">NULL or the name of the table to update the cells.  If null, then either roleId or tableId cannot be null.</param>
+    /// <param name="rowNum">NULL or the row num of the row to update the cells of.  If null, rowKEY cannot be null.</param>
+    /// <param name="rowKey">NULL or the key of the row to update the cells of.  If null, rowNum cannot be null.</param>
+    /// <exception cref="InvalidDataException">If the given data type does not match the cell's data type (ie, text when the cell is a numeric).</exception>
+    /// <exception cref="TableDoesNotExistException">If the given table does not exist.</exception>
+    /// <exception cref="ColumnDoesNotExistException">If the given column does not exist.</exception>
+    /// <exception cref="InvalidKeyException">If rowNum and rowKey are null</exception>"
+    /// <exception cref="CellDoesNotExistException">If there are no cells with the given rowNum or rowKey.</exception>"
+    /// <exception cref="KeyNotFoundException">If the given keys do not exist in any rows of the table.</exception>
+    public void UpdateRow(
+        Dictionary<string, string> updateData,
+        int? tableId = null, ulong? roleId = null, string? tableName = null,
+        int? rowNum = null, string? rowKey = null)
     {
-        switch(dataType)
+        // Validate rowNum/rowKey
+        if (rowNum is null && string.IsNullOrEmpty(rowKey)) throw new InvalidKeyException("RowNum and RowKey cannot both be null.");
+
+        // Don't bother if the dictionary contains no items.
+        if (updateData.Count < 1) return;
+
+        using var context = _factory.CreateDbContext();
+
+        // Make sure the table exists.
+        var tableDefinition = InternalGetTable(context, tableId: tableId, roleId: roleId, tableName: tableName);
+        var tableID = tableDefinition.Id;
+
+        // Grab the columns and the cells.
+        var columnsList = InternalGetColumns(context, tableId: tableID);
+        var cellsList = InternalGetCells(context, tableId: tableID, rowNum: rowNum, rowKey: rowKey);
+
+        if (!cellsList.Any()) throw new KeyNotFoundException($"No row with rowNum: {rowNum} or rowKey: {rowKey}.");
+
+        var keyList = updateData.Keys.ToList();
+
+        List<CellsModel> cellsToUpdate = new();
+
+        foreach(var key in keyList)
         {
-            case DataTypesEnum.Text:
-            case DataTypesEnum.ListText:
-                return true;
-            case DataTypesEnum.Int:
-            case DataTypesEnum.ListInt:
-                return int.TryParse(data, out _);
-            case DataTypesEnum.Decimal:
-            case DataTypesEnum.ListDecimal:
-                return double.TryParse(data, out _);
-            case DataTypesEnum.UserId:
-            case DataTypesEnum.ListUserId:
-            case DataTypesEnum.GuildId:
-            case DataTypesEnum.ListGuildId:
-            case DataTypesEnum.ChannelId:
-            case DataTypesEnum.ListChannelId:
-                return ulong.TryParse(data, out _);
-            default: return false;
+            // Make sure the column from updateData exists, and that the data matches the data type of the actual column.
+            var columnDefinition = columnsList.FirstOrDefault(column => column.Name.Equals(key));
+
+            if (columnDefinition is null) throw new ColumnDoesNotExistException($"No column with the name {key} in table id {tableID}.");
+
+            var dataType = (DataTypesEnum)columnDefinition.DataTypesId;
+            var data = updateData[key];
+
+            if (!IsValidValue(dataType, data)) throw new InvalidDataException($"Column {columnDefinition.Id} was expecting {dataType}.  Received {data}.");
+
+            var cell = cellsList.FirstOrDefault(cell => cell.ColumnDefinitionsId == columnDefinition.Id);
+
+            if (cell is null) throw new CellDoesNotExistException($"No cell for column {columnDefinition.Id} on table {tableID}.");
+
+            cell.Data = data;
+
+            cellsToUpdate.Add(cell);
         }
+
+        context.Cells.UpdateRange(cellsToUpdate);
+
+        context.SaveChanges();
+    }
+
+    internal CellsModel InternalGetCell(
+        EinDataContext context,
+        string? columnName = null, int? columnId = null,
+        int? tableId = null, ulong? roleId = null, string? tableName = null,
+        int? rowNum = null, string? rowKey = null)
+    {
+        if (rowNum is null && rowKey is null) throw new CellDoesNotExistException();
+
+        var columnDefiniton = InternalGetColumn(context, columnName, columnId, tableId, roleId, tableName);
+
+        var tableID = columnDefiniton.TableDefinitionsId;
+        var columnID = columnDefiniton.Id;
+
+        Func<CellsModel, bool> searchFunc;
+
+        if (rowNum is not null) searchFunc = (cell => cell.TableDefinitionsId == tableId && cell.ColumnDefinitionsId == columnId && cell.RowNum == rowNum);
+        else searchFunc = (cell => cell.TableDefinitionsId == tableId && cell.ColumnDefinitionsId == columnId && !string.IsNullOrEmpty(cell.RowKey) && cell.RowKey!.Equals(rowKey));
+
+        var cell = context.Cells.FirstOrDefault(searchFunc);
+
+        if (cell is null) throw new CellDoesNotExistException(tableId, columnDefiniton.Name, $"{(rowNum is null ? (rowKey is null ? "NULL" : rowKey) : rowNum)}");
+
+        return cell;
+    }
+
+    /// <summary>
+    /// Gets the cells which match the given criteria (ie, just tableid returns all cells, tableid and rowid return just the row, tableid and columnid return all that column's cells in the table.  &c
+    /// </summary>
+    /// <param name="context"></param>
+    /// <param name="columnName"></param>
+    /// <param name="columnId"></param>
+    /// <param name="tableId"></param>
+    /// <param name="roleId"></param>
+    /// <param name="tableName"></param>
+    /// <param name="rowNum"></param>
+    /// <param name="rowKey"></param>
+    /// <returns></returns>
+    internal List<CellsModel> InternalGetCells(
+        EinDataContext context,
+        string? columnName = null, int? columnId = null,
+        int? tableId = null, ulong? roleId = null, string? tableName = null,
+        int? rowNum = null, string? rowKey = null)
+    {
+        var tableDefiniton = InternalGetTable(context, tableId, roleId, tableName);
+        var tableID = tableDefiniton.Id;
+
+        Func<CellsModel, bool> searchFunc;
+
+        if (rowNum is not null) searchFunc = (cell => cell.TableDefinitionsId == tableID && cell.RowNum == rowNum);
+        else if (!string.IsNullOrEmpty(rowKey)) searchFunc = (cell => cell.TableDefinitionsId == tableID && !string.IsNullOrEmpty(cell.RowKey) && cell.RowKey.Equals(rowKey));
+        else searchFunc = (cell => cell.TableDefinitionsId == tableID);
+
+        var cells = context.Cells.Where(searchFunc);
+
+        if (!string.IsNullOrEmpty(columnName) || columnId is not null)
+        {
+            int columnID;
+
+            if (columnId is not null) columnID = (int)columnId!;
+            else
+            {
+                var columnDefiniton = InternalGetColumn(context, columnName: columnName, tableID: tableID);
+                columnID = columnDefiniton.Id;
+            }
+
+            cells = cells.Where(cell => cell.ColumnDefinitionsId == columnID);
+        }
+
+        return cells?.ToList() ?? new List<CellsModel>();
+    }
+
+    /// <summary>
+    /// Basic gate keeping.  Needs at least 1 table identifier, 1 column identifier, and 1 row identifier or else will throw exceptions.
+    /// Does -not- check if the given identifiers are valid, just that they're not null.
+    /// </summary>
+    /// <param name="tableId"></param>
+    /// <param name="roleId"></param>
+    /// <param name="tableName"></param>
+    /// <param name="columnId"></param>
+    /// <param name="columnName"></param>
+    /// <param name="rowNum"></param>
+    /// <param name="rowKey"></param>
+    /// <exception cref="TableDoesNotExistException"></exception>
+    /// <exception cref="ColumnDoesNotExistException"></exception>
+    /// <exception cref="InvalidKeyException"></exception>
+    private void CellGateKeep(
+        int? tableId = null, ulong? roleId = null, string? tableName = null,
+        int? columnId = null, string? columnName = null,
+        int? rowNum = null, string? rowKey = null)
+    {
+        if (tableId is null && roleId is null && tableName is null && columnId is null) throw new TableDoesNotExistException("NULL table.");
+        if (columnId is null && columnName is null) throw new ColumnDoesNotExistException("NULL column.");
+        if (rowNum is null && string.IsNullOrEmpty(rowKey)) throw new InvalidKeyException("NULL rowNum and rowKey.");
     }
 }
