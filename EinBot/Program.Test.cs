@@ -1,9 +1,5 @@
 ﻿namespace EinBot;
 
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-
 using EinBotDB.Context;
 using EinBotDB.DataAccess;
 using EinBotDB.Models;
@@ -11,6 +7,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 public partial class Program
 {
@@ -50,7 +49,7 @@ public partial class Program
         dal.SetEmbedPartSequence(field3Id, field1Seq);
         dal.SetEmbedPartSequence(field1Id, field1Seq + 2);
 
-        foreach(var embedPart in dal.GetEmbedParts(tableId: tableId) ?? new List<EinEmbedPartsModel>())
+        foreach (var embedPart in dal.GetEmbedParts(tableId: tableId) ?? new List<EinEmbedPartsModel>())
         {
             Console.WriteLine($"id: {embedPart.Id}\t seq: {embedPart.Sequence}\t data: {embedPart.Data01}");
         }

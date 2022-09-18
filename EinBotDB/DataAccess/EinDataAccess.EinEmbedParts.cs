@@ -1,6 +1,5 @@
 ﻿namespace EinBotDB.DataAccess;
 
-using EinBotDB.Context;
 using EinBotDB;
 using EinBotDB.Models;
 
@@ -19,7 +18,7 @@ public partial class EinDataAccess
     /// <param name="sequence">The order # of the part.  If null will place it at the end.</param>
     /// <exception cref="TableDoesNotExistException">If no such table exists.</exception>"
     /// <returns>The id of the new <see cref="EinEmbedPartsModel"/></returns>
-    public int AddEmbedPart(EmbedPartsEnum embedPart, 
+    public int AddEmbedPart(EmbedPartsEnum embedPart,
         string Data01, string? Data02 = null, string? Data03 = null,
         int? tableId = null, ulong? roleId = null, string? tableName = null,
         int? sequence = null)
@@ -45,14 +44,14 @@ public partial class EinDataAccess
         int seq = (int)sequence;
 
         var addedEmbed = context.EinEmbedParts.Add(new EinEmbedPartsModel()
-            {
-                TableDefinitionsId = (int)tableId,
-                EmbedPartTypesId = (int)embedPart,
-                Data01 = Data01,
-                Data02 = Data02,
-                Data03 = Data03,
-                Sequence = seq,
-            });
+        {
+            TableDefinitionsId = (int)tableId,
+            EmbedPartTypesId = (int)embedPart,
+            Data01 = Data01,
+            Data02 = Data02,
+            Data03 = Data03,
+            Sequence = seq,
+        });
 
         context.SaveChanges();
         return addedEmbed.Entity.Id;
@@ -221,7 +220,8 @@ public partial class EinDataAccess
         if (embedPartId is null)
         {
             partsList = context.EinEmbedParts.Where(part => part.TableDefinitionsId == tableId).ToList();
-        } else
+        }
+        else
         {
             var embedPart = context.EinEmbedParts.FirstOrDefault(part => part.TableDefinitionsId == tableId && part.Id == (int)embedPartId);
 

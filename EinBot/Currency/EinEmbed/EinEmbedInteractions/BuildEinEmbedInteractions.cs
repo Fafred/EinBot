@@ -20,7 +20,7 @@ public partial class BuildEinEmbedInteractions : InteractionModuleBase<SocketInt
     [SlashCommand("add", "Adds a part to the display of the given collection.")]
     public async Task HandleBuildAddCommand(IRole role, EmbedPartsEnum partType, string data01, string? data02 = null, string? data03 = null)
     {
-        if(string.IsNullOrEmpty(data01))
+        if (string.IsNullOrEmpty(data01))
         {
             await RespondFailureAsync("You must include data in at least the first data slot.");
             return;
@@ -31,7 +31,8 @@ public partial class BuildEinEmbedInteractions : InteractionModuleBase<SocketInt
         try
         {
             tableDefinition = _dataAccess.GetTable(roleId: role.Id);
-        } catch (TableDoesNotExistException)
+        }
+        catch (TableDoesNotExistException)
         {
             await RespondFailureAsync($"There is no collection associated with the role {role.Mention}.");
             return;
@@ -45,7 +46,7 @@ public partial class BuildEinEmbedInteractions : InteractionModuleBase<SocketInt
     [SlashCommand("data", "Sets the data fields for one of the embed parts.")]
     public async Task HandleBuildDataCommand(IRole role, int partId, string? data01 = null, string? data02 = null, string? data03 = null)
     {
-        if(data01 is null && data02 is null && data03 is null)
+        if (data01 is null && data02 is null && data03 is null)
         {
             await RespondFailureAsync($"No new data provided. No changes were made.");
             return;
@@ -56,7 +57,8 @@ public partial class BuildEinEmbedInteractions : InteractionModuleBase<SocketInt
         try
         {
             tableDefinition = _dataAccess.GetTable(roleId: role.Id);
-        } catch (TableDoesNotExistException)
+        }
+        catch (TableDoesNotExistException)
         {
             await RespondFailureAsync($"There is no collection associated with {role.Mention}.");
             return;
@@ -67,7 +69,8 @@ public partial class BuildEinEmbedInteractions : InteractionModuleBase<SocketInt
         try
         {
             embedPart = _dataAccess.GetEmbedPart(partId, roleId: role.Id);
-        } catch (EinEmbedPartDoesNotExistException)
+        }
+        catch (EinEmbedPartDoesNotExistException)
         {
             await RespondFailureAsync($"There is no embed part with id {partId} in the {role.Mention} collection.");
             return;
@@ -130,7 +133,8 @@ public partial class BuildEinEmbedInteractions : InteractionModuleBase<SocketInt
         try
         {
             _dataAccess.RemoveAllEmbedParts(roleId: role.Id);
-        } catch (TableDoesNotExistException)
+        }
+        catch (TableDoesNotExistException)
         {
             await RespondFailureAsync($"There is no collection associated with the role {role.Mention}.");
             return;
@@ -167,7 +171,8 @@ public partial class BuildEinEmbedInteractions : InteractionModuleBase<SocketInt
         try
         {
             tableDefinition = _dataAccess.GetTable(roleId: role.Id);
-        } catch (TableDoesNotExistException)
+        }
+        catch (TableDoesNotExistException)
         {
             await RespondFailureAsync($"No collection is associated with {role.Mention}.");
             return;
@@ -178,7 +183,8 @@ public partial class BuildEinEmbedInteractions : InteractionModuleBase<SocketInt
         try
         {
             einEmbedPart = _dataAccess.GetEmbedPart(partId, tableId: tableDefinition.Id)!;
-        } catch (EinEmbedPartDoesNotExistException)
+        }
+        catch (EinEmbedPartDoesNotExistException)
         {
             await RespondFailureAsync($"{role.Mention} collection display does not have a display part with id `{partId}`.");
             return;
@@ -195,7 +201,8 @@ public partial class BuildEinEmbedInteractions : InteractionModuleBase<SocketInt
         try
         {
             tableDefinition = _dataAccess.GetTable(roleId: role.Id);
-        } catch (TableDoesNotExistException)
+        }
+        catch (TableDoesNotExistException)
         {
             await RespondFailureAsync($"There is no collection associated with {role.Mention}.  Use `/collection list` to see available collections.");
             return;
@@ -212,7 +219,8 @@ public partial class BuildEinEmbedInteractions : InteractionModuleBase<SocketInt
             }
 
             _dataAccess.SetEmbedPartSequence(partId, newSequenceNumber);
-        } catch (EinEmbedPartDoesNotExistException)
+        }
+        catch (EinEmbedPartDoesNotExistException)
         {
             await RespondFailureAsync($"There is no embed part with the id {partId}.  Use `/build info` to look up the embed part id.");
             return;
@@ -247,7 +255,7 @@ public partial class BuildEinEmbedInteractions : InteractionModuleBase<SocketInt
         embedBuilder.WithDescription("The following items are the parts of the custom embed.\n_ _\nThe `[id]` of the item is used to edit it with `/build remove`, `/build data`, or `/build sequence`.\n_ _\nThe `[#]` is the order in which the item is added.  This only matters for fields.  You can change the order using the item's id with `/build sequence`.\n_ _\n:small_blue_diamond: :small_blue_diamond: :small_blue_diamond: :small_blue_diamond: :small_blue_diamond: :small_blue_diamond: :small_blue_diamond: :small_blue_diamond: :small_blue_diamond: :small_blue_diamond: :small_blue_diamond: :small_blue_diamond: :small_blue_diamond: :small_blue_diamond: :small_blue_diamond: \n_ _");
 
         StringBuilder sb = new StringBuilder();
-        foreach(var part in embedParts)
+        foreach (var part in embedParts)
         {
             string title = $"[id: {part.Id}] [#{part.Sequence:D2}]\t{(EmbedPartsEnum)part.EmbedPartTypesId}";
 

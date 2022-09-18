@@ -1,10 +1,10 @@
 ﻿namespace EinBot.Currency.CollectionInteractions;
 
-using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
-using EinBotDB.DataAccess;
 using EinBotDB;
+using EinBotDB.DataAccess;
+using System.Threading.Tasks;
 
 public partial class CollectionInteractions
 {
@@ -23,7 +23,8 @@ public partial class CollectionInteractions
             _dataAccess.CreateTable(role.Name, CollectionType, role.Id);
             await RespondSuccessAsync($"Collection `{role.Name}` has been created and assigned to {role.Mention}.");
             return;
-        } catch (InvalidNameException)
+        }
+        catch (InvalidNameException)
         {
             await RespondFailureAsync($"`{role.Name}` is not a valid collection name.");
             return;

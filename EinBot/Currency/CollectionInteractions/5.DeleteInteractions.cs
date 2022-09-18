@@ -1,10 +1,9 @@
 ﻿namespace EinBot.Currency.CollectionInteractions;
 
-using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
-using EinBotDB.DataAccess;
 using EinBotDB;
+using System.Threading.Tasks;
 
 public partial class CollectionInteractions
 {
@@ -29,7 +28,8 @@ public partial class CollectionInteractions
 
             await RespondAsync($"`[Success]` You have deleted the `{table.Name}` collection associated with the role {Role.Mention}.");
             return;
-        } catch (TableDoesNotExistException)
+        }
+        catch (TableDoesNotExistException)
         {
             await RespondFailureAsync($"There is no table associated with {Role.Mention}.");
             return;

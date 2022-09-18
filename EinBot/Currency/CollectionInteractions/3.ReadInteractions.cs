@@ -1,11 +1,11 @@
 ﻿namespace EinBot.Currency.CollectionInteractions;
 
-using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
-using EinBotDB.DataAccess;
-using EinBotDB;
 using EinBot.Currency.Extensions;
+using EinBotDB;
+using EinBotDB.DataAccess;
+using System.Threading.Tasks;
 
 public partial class CollectionInteractions
 {
@@ -22,7 +22,8 @@ public partial class CollectionInteractions
         try
         {
             einTable = _dataAccess.GetEinTable(roleId: Role.Id);
-        } catch (TableDoesNotExistException)
+        }
+        catch (TableDoesNotExistException)
         {
             await RespondFailureAsync($"There is no collection associated with the role {Role.Mention}.");
             return;
@@ -47,7 +48,7 @@ public partial class CollectionInteractions
 
         var guildRolesList = Context.Guild.Roles;
 
-        foreach(IRole role in guildRolesList)
+        foreach (IRole role in guildRolesList)
         {
             try
             {
@@ -62,10 +63,12 @@ public partial class CollectionInteractions
                     $"**{role.Mention}**\n*Type*: {collectionType}\n*Currencies*: {currencyCount}\n*Instances*: {instances}",
                     inline: true);
 
-            } catch (TableDoesNotExistException)
+            }
+            catch (TableDoesNotExistException)
             {
                 continue;
-            } catch (NullReferenceException e)
+            }
+            catch (NullReferenceException e)
             {
                 Console.WriteLine(e);
             }

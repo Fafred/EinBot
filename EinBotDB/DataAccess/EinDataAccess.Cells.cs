@@ -1,9 +1,8 @@
 ﻿namespace EinBotDB.DataAccess;
 
-using System;
-
 using EinBotDB.Context;
 using EinBotDB.Models;
+using System;
 
 public partial class EinDataAccess
 {
@@ -34,7 +33,7 @@ public partial class EinDataAccess
         if (string.IsNullOrEmpty(rowKey)) throw new InvalidKeyException("Key cannot be null.");
 
         using var context = _factory.CreateDbContext();
-        
+
         // Make sure the table exists, and get its ID.
         var tableDefinition = InternalGetTable(context, tableId, roleId, tableName);
         int tableID = tableDefinition.Id;
@@ -60,7 +59,7 @@ public partial class EinDataAccess
 
         dataDict ??= new Dictionary<string, string>();
 
-        foreach(var column in columnsList)
+        foreach (var column in columnsList)
         {
             string data = "";
 
@@ -83,7 +82,7 @@ public partial class EinDataAccess
         }
 
         context.Cells.AddRange(cells);
-        context.SaveChanges();            
+        context.SaveChanges();
     }
 
     /// <summary>
@@ -134,7 +133,7 @@ public partial class EinDataAccess
         // Set the new key.
         string oldKey = cellList.First().RowKey ?? "";
 
-        foreach(var cell in cellList)
+        foreach (var cell in cellList)
         {
             cell.RowKey = newKey;
         }
@@ -167,7 +166,7 @@ public partial class EinDataAccess
 
         var cellsList = InternalGetCells(context, tableId: tableId, rowNum: rowNum, rowKey: rowKey);
 
-        foreach(var cell in cellsList)
+        foreach (var cell in cellsList)
         {
             context.Cells.Remove(cell);
         }
@@ -215,7 +214,7 @@ public partial class EinDataAccess
     {
         if (string.IsNullOrEmpty(data)) return true;
 
-        switch(dataType)
+        switch (dataType)
         {
             case DataTypesEnum.Text:
             case DataTypesEnum.ListText:
@@ -416,7 +415,7 @@ public partial class EinDataAccess
 
         List<CellsModel> cellsToUpdate = new();
 
-        foreach(var key in keyList)
+        foreach (var key in keyList)
         {
             // Make sure the column from updateData exists, and that the data matches the data type of the actual column.
             var columnDefinition = columnsList.FirstOrDefault(column => column.Name.Equals(key));

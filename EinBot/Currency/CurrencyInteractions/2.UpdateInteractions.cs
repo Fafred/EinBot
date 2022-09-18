@@ -6,8 +6,6 @@ using EinBot.Currency.CurrencyInteractions.Exceptions;
 using EinBotDB;
 using EinBotDB.DataAccess;
 using EinBotDB.Models;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
-using System.Text;
 
 public partial class CurrencyInteractions
 {
@@ -26,19 +24,23 @@ public partial class CurrencyInteractions
                 out tableDefinition, out columnDefinition,
                 out key, out collectionType, out keyMention,
                 user: user, collectionKey: currencyKey);
-        } catch (TableDoesNotExistException)
+        }
+        catch (TableDoesNotExistException)
         {
             await RespondFailureAsync($"No table is associated with the role {role.Mention}.");
             return;
-        } catch (ColumnDoesNotExistException)
+        }
+        catch (ColumnDoesNotExistException)
         {
             await RespondFailureAsync($"{role.Mention} does not contain a currency named `{currencyName}`.");
             return;
-        } catch (CollectionTypeIsPerKeyException)
+        }
+        catch (CollectionTypeIsPerKeyException)
         {
             await RespondFailureAsync($"{role.Mention} is a PerKey type collection.  Please enter in a key in the key input.");
             return;
-        } catch (CollectionTypeIsPerUserException)
+        }
+        catch (CollectionTypeIsPerUserException)
         {
             await RespondFailureAsync($"{role.Mention} is a PerUser type collection.  Please enter in a user (@User) in the user input.");
             return;
@@ -50,19 +52,23 @@ public partial class CurrencyInteractions
         try
         {
             _dataAccess.SetCellValue(setValue, tableId: tableId, columnId: columnId, rowKey: key);
-        } catch (InvalidDataException e)
+        }
+        catch (InvalidDataException e)
         {
             await RespondFailureAsync($"{role.Mention}'s {e.Message}.");
             return;
-        } catch (TableDoesNotExistException)
+        }
+        catch (TableDoesNotExistException)
         {
             await RespondFailureAsync($"No table is associated with the role {role.Mention}.");
             return;
-        }   catch (ColumnDoesNotExistException)
+        }
+        catch (ColumnDoesNotExistException)
         {
             await RespondFailureAsync($"{role.Mention} does not contain a currency named `{currencyName}`.");
             return;
-        } catch (CellDoesNotExistException)
+        }
+        catch (CellDoesNotExistException)
         {
             await RespondFailureAsync($"Unable to find the cell for {role.Mention}'s `{currencyName}`.");
             return;

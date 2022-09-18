@@ -1,9 +1,9 @@
 ﻿namespace EinBotDB.DataAccess;
 
-using System.Linq;
 using EinBotDB;
 using EinBotDB.Context;
 using EinBotDB.Models;
+using System.Linq;
 
 public partial class EinDataAccess
 {

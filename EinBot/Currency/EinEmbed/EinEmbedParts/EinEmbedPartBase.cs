@@ -4,8 +4,6 @@ using Discord;
 using EinBotDB;
 using EinBotDB.DataAccess;
 using EinBotDB.Models;
-using System.Linq;
-using System.Runtime.CompilerServices;
 
 internal abstract class EinEmbedPartBase : IEinEmbedPart
 {
@@ -35,12 +33,12 @@ internal abstract class EinEmbedPartBase : IEinEmbedPart
 
         int count = 0;
 
-        foreach(char c in data.ToCharArray())
+        foreach (char c in data.ToCharArray())
         {
             if (c.Equals('{')) ++count;
         }
 
-        foreach(var key in _einRow.Columns.Keys)
+        foreach (var key in _einRow.Columns.Keys)
         {
             if (count < 1) break;
 
@@ -52,7 +50,7 @@ internal abstract class EinEmbedPartBase : IEinEmbedPart
             if (!columnInfo.IsColumnList)
             {
                 var columnData = (columnInfo.Data is null ? "[NULL]" : (string)columnInfo.Data);
-                switch(columnInfo.DataType)
+                switch (columnInfo.DataType)
                 {
                     case DataTypesEnum.UserId:
                         replaceTerm = $"<@{columnData}>";

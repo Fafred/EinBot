@@ -1,14 +1,13 @@
 ﻿namespace EinBot.Currency.CollectionInteractions;
 
-using System.Threading.Tasks;
+using CsvHelper;
 using Discord;
 using Discord.Interactions;
-using EinBotDB.DataAccess;
 using EinBotDB;
-using Microsoft.EntityFrameworkCore.Query;
-using System.Text;
-using CsvHelper;
+using EinBotDB.DataAccess;
 using EinBotDB.Models;
+using System.Text;
+using System.Threading.Tasks;
 
 public partial class CollectionInteractions
 {
@@ -45,11 +44,13 @@ public partial class CollectionInteractions
                 tableDefinition = _dataAccess.CreateTable(role.Name, collectionType, role.Id);
 
                 if (tableDefinition is null) throw new NullReferenceException();
-            } catch (TableAlreadyExistsException)
+            }
+            catch (TableAlreadyExistsException)
             {
                 await RespondAsync($"`[Failure]` There is already a collection assigned to role {role.Mention}.");
                 return;
-            } catch (NullReferenceException)
+            }
+            catch (NullReferenceException)
             {
                 await RespondAsync($"`[Failure]` Unable to create collection.");
                 return;
@@ -73,7 +74,7 @@ public partial class CollectionInteractions
 
                 List<string> resultList = new List<string>();
                 int counter = 1;
-                foreach(var record in csvReader.GetRecords(anonRecord))
+                foreach (var record in csvReader.GetRecords(anonRecord))
                 {
                     try
                     {
@@ -81,7 +82,8 @@ public partial class CollectionInteractions
                         {
                             resultList.Add($"-[Row {counter++:D3}]\t{record} NOT ADDED. CURRENCY NAME CANNOT BE NULL.");
                             continue;
-                        } else if (record.DataType is null)
+                        }
+                        else if (record.DataType is null)
                         {
                             resultList.Add($"-[Row {counter++:D3}]\t{record} NOT ADDED. DATA TYPE CANNOT BE NULL.");
                             continue;
@@ -98,11 +100,13 @@ public partial class CollectionInteractions
 
                         _dataAccess.CreateColumn(columnName, (DataTypesEnum)dataTypeId, tableId: tableDefinition.Id);
                         resultList.Add($"+[Row {counter++:D3}]\t{record.CurrencyName} {{{record.DataType}}} has been added to {role.Name}.");
-                    } catch (ColumnAlreadyExistsException)
+                    }
+                    catch (ColumnAlreadyExistsException)
                     {
                         resultList.Add($"-[Row  {counter++:D3} ]\t{record} NOT ADDED.  CURRENCY ALREADY EXISTS IN THIS COLLECTION.");
                         continue;
-                    } catch (InvalidNameException)
+                    }
+                    catch (InvalidNameException)
                     {
                         resultList.Add($"-[Row  {counter++:D3} ]\t{record} NOT ADDED.  INVALID CURRENCY NAME.");
                         continue;
@@ -112,12 +116,13 @@ public partial class CollectionInteractions
                 StringBuilder sb = new();
                 sb.AppendLine("```diff");
 
-                foreach(var line in resultList)
+                foreach (var line in resultList)
                 {
                     if (sb.Length + line.Length < 1990)
                     {
                         sb.AppendLine(line);
-                    } else
+                    }
+                    else
                     {
                         sb.AppendLine("```");
                         await FollowupAsync(sb.ToString());
@@ -131,7 +136,8 @@ public partial class CollectionInteractions
 
                 await FollowupAsync(sb.ToString());
 
-            } catch (Exception e)
+            }
+            catch (Exception e)
             {
                 await FollowupAsync($"`[Failure]` Something went wrong. Namely:\n```\n{e.Message}\n```");
                 return;

@@ -1,7 +1,7 @@
 ﻿namespace EinBotDB.Models;
 
 public class EinEmbedPartsModel
-{ 
+{
     public int Id { get; set; }
 
     public int TableDefinitionsId { get; set; }

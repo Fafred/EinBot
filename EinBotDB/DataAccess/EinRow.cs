@@ -83,7 +83,7 @@ public class EinRow
 
         stringBuilder.Append($"[{Id}] [Key: {Key ?? "NULL"}] ");
 
-        foreach(string key in ColumnDataTypes.Keys)
+        foreach (string key in ColumnDataTypes.Keys)
         {
             stringBuilder.Append($"[{key}: ");
 
@@ -91,17 +91,19 @@ public class EinRow
             {
                 stringBuilder.Append(Columns[key] ?? "NULL");
                 stringBuilder.Append("] ");
-            } else if (ListColumns.ContainsKey(key))
+            }
+            else if (ListColumns.ContainsKey(key))
             {
                 stringBuilder.Append('(');
 
-                foreach(var str in ListColumns[key])
+                foreach (var str in ListColumns[key])
                 {
                     stringBuilder.Append(str ?? "NULL");
                     stringBuilder.Append(", ");
                 }
                 stringBuilder.Append(")] ");
-            } else
+            }
+            else
             {
                 stringBuilder.Append("NULL] ");
             }

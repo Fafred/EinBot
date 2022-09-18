@@ -1,10 +1,10 @@
 ﻿namespace EinBot.Currency.CollectionInteractions;
 
-using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
-using EinBotDB.DataAccess;
 using EinBotDB;
+using EinBotDB.DataAccess;
+using System.Threading.Tasks;
 
 public partial class CollectionInteractions
 {
@@ -21,11 +21,13 @@ public partial class CollectionInteractions
         {
             _dataAccess.RenameTable(NewRole.Name, roleId: OldRole.Id);
             _dataAccess.SetTableRole(NewRole.Id, roleId: OldRole.Id);
-        } catch (InvalidNameException)
+        }
+        catch (InvalidNameException)
         {
             await RespondFailureAsync($"{NewRole.Name} is not a valid table name.");
             return;
-        } catch (TableDoesNotExistException)
+        }
+        catch (TableDoesNotExistException)
         {
             await RespondFailureAsync($"There is no currency associated with {OldRole.Mention}.");
             return;
@@ -62,7 +64,8 @@ public partial class CollectionInteractions
         {
             await RespondFailureAsync($"{role.Mention} is a PerUser collection.  Must supply a user (@User) in the user input in order to uninstantiate a collection instance.");
             return;
-        } else if (tableDefinition.CollectionTypeId == (int)CollectionTypesEnum.PerKey
+        }
+        else if (tableDefinition.CollectionTypeId == (int)CollectionTypesEnum.PerKey
                     && string.IsNullOrEmpty(key))
         {
             await RespondFailureAsync($"{role.Mention} is a PerKey collection.  Must supply a key in the key input in order to uninstantiate a collection instance.");
@@ -78,7 +81,8 @@ public partial class CollectionInteractions
             key = user!.Id.ToString();
             keyMention = user!.Mention;
             keyType = "user";
-        } else if (tableDefinition.CollectionTypeId == (int)CollectionTypesEnum.PerRole)
+        }
+        else if (tableDefinition.CollectionTypeId == (int)CollectionTypesEnum.PerRole)
         {
             key = role.Id.ToString();
             keyMention = role.Mention;
@@ -88,12 +92,15 @@ public partial class CollectionInteractions
         try
         {
             _dataAccess.DeleteRow(tableId: tableDefinition.Id, rowKey: key);
-        } catch (TableDoesNotExistException)
+        }
+        catch (TableDoesNotExistException)
         {
             // Probably could never get here, but just in case between the entrance and now someone has deleted the table.
             await RespondFailureAsync($"There is no table associated with the role {role.Mention}.");
             return;
-        } catch (InvalidKeyException) {
+        }
+        catch (InvalidKeyException)
+        {
             await RespondFailureAsync($"{role.Mention} does not have an instanced collection assigned to the {keyType} {keyMention}.");
             return;
         }
@@ -142,7 +149,8 @@ public partial class CollectionInteractions
             tableKey = role.Id.ToString();
             keyMention = role.Mention;
             keyTypeString = "role";
-        } else if (tableDefinition.CollectionTypeId == (int)CollectionTypesEnum.PerUser)
+        }
+        else if (tableDefinition.CollectionTypeId == (int)CollectionTypesEnum.PerUser)
         {
             if (user is null)
             {
@@ -153,7 +161,8 @@ public partial class CollectionInteractions
             tableKey = user.Id.ToString();
             keyMention = user.Mention;
             keyTypeString = "user";
-        } else if (tableDefinition.CollectionTypeId == (int)CollectionTypesEnum.PerKey)
+        }
+        else if (tableDefinition.CollectionTypeId == (int)CollectionTypesEnum.PerKey)
         {
             if (key is null)
             {
@@ -164,7 +173,8 @@ public partial class CollectionInteractions
             tableKey = key;
             keyMention = key;
             keyTypeString = "key";
-        } else
+        }
+        else
         {
             // TODO: log this.
             await RespondFailureAsync($"Something has gone horribly wrong: unable to determine the collection type of {role.Mention}.");
@@ -174,11 +184,13 @@ public partial class CollectionInteractions
         try
         {
             _dataAccess.AddRow(tableKey, tableId: tableDefinition.Id);
-        } catch (TableDoesNotExistException)
+        }
+        catch (TableDoesNotExistException)
         {
             await RespondFailureAsync($"There is no table associated with the role {role.Mention}.");
             return;
-        } catch (KeyAlreadyPresentInTableException)
+        }
+        catch (KeyAlreadyPresentInTableException)
         {
             await RespondFailureAsync($"There is already an instance of the {role.Mention} collection for the {keyTypeString} {keyMention}.");
             return;
@@ -214,15 +226,18 @@ public partial class CollectionInteractions
             try
             {
                 _dataAccess.CreateColumn(currencyName, dataType, roleId: role.Id);
-            } catch (TableDoesNotExistException)
+            }
+            catch (TableDoesNotExistException)
             {
                 await RespondFailureAsync($"There is no collection associated with {role.Mention}.");
                 return;
-            } catch (InvalidNameException)
+            }
+            catch (InvalidNameException)
             {
                 await RespondFailureAsync($"The name `{currencyName}` is invalid.  Please choose a name with only alpha-numeric characters for the currency.");
                 return;
-            } catch (ColumnAlreadyExistsException)
+            }
+            catch (ColumnAlreadyExistsException)
             {
                 await RespondFailureAsync($"There is already a currency with the name `{currencyName}` in the {role.Mention} collection.  Please choose a different currency name.");
                 return;
@@ -252,11 +267,13 @@ public partial class CollectionInteractions
             {
                 _dataAccess.DeleteColumn(roleId: Role.Id, columnName: CurrencyName);
                 await RespondSuccessAsync($"`{CurrencyName}` has been removed from the {Role.Mention} collection.");
-            } catch (TableDoesNotExistException)
+            }
+            catch (TableDoesNotExistException)
             {
                 await RespondFailureAsync($"There is no collection assigned to {Role.Mention}.");
                 return;
-            } catch (ColumnDoesNotExistException)
+            }
+            catch (ColumnDoesNotExistException)
             {
                 await RespondFailureAsync($"There is no currency named `{CurrencyName}` in the {Role.Mention} collection.  Currencies are CASE-SENSITIVE.");
                 return;

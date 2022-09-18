@@ -3,7 +3,7 @@
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 
-[Index(nameof(TableDefinitionsModel.Name), IsUnique=true)]
+[Index(nameof(TableDefinitionsModel.Name), IsUnique = true)]
 [Index(nameof(TableDefinitionsModel.RoleId), IsUnique = true)]
 public class TableDefinitionsModel
 {

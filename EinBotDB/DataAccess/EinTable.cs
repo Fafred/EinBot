@@ -59,7 +59,7 @@ public partial class EinTable
 
         sb.Append("ID,Key,");
 
-        for(int i = 0; i < columnsList.Count; ++i)
+        for (int i = 0; i < columnsList.Count; ++i)
         {
             sb.Append(columnsList[i]);
 
@@ -70,7 +70,7 @@ public partial class EinTable
         }
         sb.AppendLine();
 
-        foreach(var row in Rows)
+        foreach (var row in Rows)
         {
             sb.AppendLine(row.ToCSVString(columnsList));
         }
@@ -117,7 +117,7 @@ public partial class EinTable
             x.TableDefinitionsId == _tableId);
 
         Dictionary<string, DataTypesEnum> dict = new Dictionary<string, DataTypesEnum>();
-        foreach(var columnDefinition in columnDefinitions)
+        foreach (var columnDefinition in columnDefinitions)
         {
             dict[columnDefinition.Name] = (DataTypesEnum)columnDefinition.DataTypesId;
         }
@@ -133,7 +133,7 @@ public partial class EinTable
             (from row in rows
              select row.RowNum).Distinct();
 
-        foreach(var rowNum in rowNums)
+        foreach (var rowNum in rowNums)
         {
             var cells = rows.Where(x =>
                 x.RowNum == rowNum).ToList();

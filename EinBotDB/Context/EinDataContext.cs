@@ -2,7 +2,6 @@
 
 using EinBotDB.Models;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Query.Internal;
 
 public class EinDataContext : DbContext
 {

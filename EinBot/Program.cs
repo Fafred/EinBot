@@ -1,13 +1,11 @@
 ﻿namespace EinBot;
 
+using Discord;
 using Discord.Commands;
 using Discord.Interactions;
 using Discord.WebSocket;
-using Discord;
-
 using EinBot.General.Services;
 using EinBot.HostSetup;
-
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -100,7 +98,7 @@ public partial class Program
             // Register slash commands.
             List<string> guildIds = configuration.GetSection("RegisterSlashCommandsto").Get<List<string>>();
 
-            foreach(string guildId in guildIds)
+            foreach (string guildId in guildIds)
             {
                 await interactionService.RegisterCommandsToGuildAsync(ulong.Parse(guildId));
             }

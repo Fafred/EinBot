@@ -50,7 +50,8 @@ public class InteractionHandler
         {
             var context = new SocketInteractionContext(_socketClient, socketInteraction);
             await _interactionService.ExecuteCommandAsync(context, _serviceProvider);
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             // TODO: better logging.
             Console.WriteLine(e);

@@ -100,9 +100,9 @@ public partial class EinDataAccess
         int? tableId = null, ulong? roleId = null, string? tableName = null)
     {
         if (string.IsNullOrEmpty(newTableName)) throw new InvalidNameException($"Table names cannot be blank or null.");
-        
+
         using var context = _factory.CreateDbContext();
-        
+
         if (InternalDoesTableExist(context, tableName: newTableName)) throw new TableAlreadyExistsWithNameException(newTableName);
 
         TableDefinitionsModel tableDefinition = InternalGetTable(context, tableId: tableId, roleId: roleId, tableName: tableName);

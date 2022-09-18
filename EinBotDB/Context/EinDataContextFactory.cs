@@ -1,9 +1,9 @@
 ﻿namespace EinBotDB.Context;
 
-using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
+using System;
 
 public class EinDataContextFactory : IDesignTimeDbContextFactory<EinDataContext>
 {

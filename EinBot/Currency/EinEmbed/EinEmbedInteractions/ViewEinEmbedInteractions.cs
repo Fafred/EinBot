@@ -6,10 +6,8 @@ using EinBot.Currency.EinEmbed.Extensiosn;
 using EinBotDB;
 using EinBotDB.DataAccess;
 using EinBotDB.Models;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 public partial class ViewEinEmbedInteractions : InteractionModuleBase<SocketInteractionContext>
@@ -33,7 +31,8 @@ public partial class ViewEinEmbedInteractions : InteractionModuleBase<SocketInte
         {
             tableDefinition = _dataAccess.GetTable(roleId: role.Id);
             einTable = _dataAccess.GetEinTable(tableDefinition.Id);
-        } catch (TableDoesNotExistException)
+        }
+        catch (TableDoesNotExistException)
         {
             await RespondFailureAsync($"There is no collection associated with the role {role.Mention}.");
             return;
@@ -71,9 +70,10 @@ public partial class ViewEinEmbedInteractions : InteractionModuleBase<SocketInte
         try
         {
             einRow = einTable.GetRow(key);
-        } catch (KeyNotFoundException)
+        }
+        catch (KeyNotFoundException)
         {
-            switch(collectionType)
+            switch (collectionType)
             {
                 case CollectionTypesEnum.PerKey:
                     await RespondFailureAsync($"No instanced collection of {role.Mention} is associated with the `{key}` key.");
@@ -92,12 +92,13 @@ public partial class ViewEinEmbedInteractions : InteractionModuleBase<SocketInte
         bool isEphemeral = false;
 
         List<EinEmbedPartsModel>? einEmbedPartsList;
-        
+
         // Now see if we havea ny EinEmbedParts associated with this table.
         try
         {
             einEmbedPartsList = _dataAccess.GetEmbedParts(tableId: tableDefinition.Id);
-        } catch (TableDoesNotExistException)
+        }
+        catch (TableDoesNotExistException)
         {
             await RespondFailureAsync($"There is no collection associated with the role {role.Mention}.");
             return;
@@ -126,7 +127,7 @@ public partial class ViewEinEmbedInteractions : InteractionModuleBase<SocketInte
 
         var embedBuilder = new EmbedBuilder();
 
-        foreach(var einEmbedPart in einEmbedPartsList)
+        foreach (var einEmbedPart in einEmbedPartsList)
         {
             embedBuilder.AddEinEmbedPart(einRow, einEmbedPart);
         }

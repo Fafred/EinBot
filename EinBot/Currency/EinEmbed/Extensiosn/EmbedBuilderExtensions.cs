@@ -1,10 +1,10 @@
 ﻿namespace EinBot.Currency.EinEmbed.Extensiosn;
 
 using Discord;
-using EinBotDB;
-using EinBotDB.Models;
 using EinBot.Currency.EinEmbed;
+using EinBotDB;
 using EinBotDB.DataAccess;
+using EinBotDB.Models;
 
 public static partial class EmbedBuilderExtensions
 {

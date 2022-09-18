@@ -61,13 +61,14 @@ public class CommandHandler
         int argPos = 0;
 
         if (!message.HasStringPrefix(_prefix, ref argPos) && !message.HasMentionPrefix(_socketClient.CurrentUser, ref argPos)) return;
-        
+
         try
         {
             var context = new SocketCommandContext(_socketClient, message);
 
             await _commandService.ExecuteAsync(context, argPos, _serviceProvider);
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             // TODO: Better logging.
             Console.WriteLine(e);

@@ -2,7 +2,6 @@
 
 using Discord;
 using Discord.Interactions;
-using EinBotDB.DataAccess;
 
 public partial class GeneralInteractionCommands : InteractionModuleBase<SocketInteractionContext>
 {
@@ -31,12 +30,14 @@ public partial class GeneralInteractionCommands : InteractionModuleBase<SocketIn
             mention = user.Mention;
             type = "User";
             id = user.Id.ToString();
-        } else if (role is not null)
+        }
+        else if (role is not null)
         {
             mention = role.Mention;
             type = "Role";
             id = role.Id.ToString();
-        } else
+        }
+        else
         {
             id = channel.Id.ToString();
             type = "Channel";
