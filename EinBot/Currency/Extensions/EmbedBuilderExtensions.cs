@@ -2,7 +2,6 @@
 
 using Discord;
 using EinBotDB.DataAccess;
-using System.Collections.Immutable;
 using System.Text;
 
 /// <summary>
@@ -11,7 +10,7 @@ using System.Text;
 public static class EmbedBuilderExtensions
 {
     /// <summary>
-    /// Extension to the EmbedBuilder class which takes an EinTable and manipulates an EmbedBuilder object to display it.
+    /// Extension to the EmbedBuilder class which takes an EinTable and manipulates an EmbedBuilder object to display basic info about it.
     /// </summary>
     /// <param name="eb">This embed builder.</param>
     /// <param name="eTable">The EinTable to display.</param>
@@ -49,6 +48,12 @@ public static class EmbedBuilderExtensions
         return eb;
     }
 
+    /// <summary>
+    /// Creates a list of embeds to enumerate the instances of the collection.
+    /// </summary>
+    /// <param name="eTable">The EinTable to enumerate the instances of.</param>
+    /// <param name="role">This is used purely to set the color of the embeds.</param>
+    /// <returns>An Embed list with as many embeds as it takes to list all the instances (25 per embed).</returns>
     public static Embed[] GetEinTableInstances(EinTable eTable, IRole role)
     {
         Func<string, string> mentionFunc = (CollectionTypesEnum)eTable.CollectionTypeId switch
@@ -91,6 +96,12 @@ public static class EmbedBuilderExtensions
         return embedList.ToArray();
     }
 
+    /// <summary>
+    /// Creates a list of embeds to enumerate the currencies of the collection.
+    /// </summary>
+    /// <param name="eTable">The EinTable to enumerate the currencies of.</param>
+    /// <param name="role">This is used purely to set the color of the embeds.</param>
+    /// <returns>An Embed list with as many embeds as it takes to list all the currencies (25 per embed).</returns>
     public static Embed[] GetEinTableFields(EinTable eTable, IRole role)
     {
         var rowKeys = eTable.ColumnDataTypes.Keys.ToList();
