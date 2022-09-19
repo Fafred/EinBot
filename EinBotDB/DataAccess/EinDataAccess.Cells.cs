@@ -41,12 +41,16 @@ public partial class EinDataAccess
 
         if ((context.Cells.FirstOrDefault(cell => cell.TableDefinitionsId == tableID && !string.IsNullOrEmpty(cell.RowKey) && cell.RowKey.Equals(rowKey))) is not null)
         {
+            context.Dispose();
             UpdateRow(dataDict, tableId: tableID, rowKey: rowKey);
         }
         else
         {
+            context.Dispose();
             AddRow(rowKey, dataDict, tableId: tableID);
         }
+
+
     }
 
     /// <summary>
@@ -494,8 +498,8 @@ public partial class EinDataAccess
 
         Func<CellsModel, bool> searchFunc;
 
-        if (rowNum is not null) searchFunc = (cell => cell.TableDefinitionsId == tableId && cell.ColumnDefinitionsId == columnId && cell.RowNum == rowNum);
-        else searchFunc = (cell => cell.TableDefinitionsId == tableId && cell.ColumnDefinitionsId == columnId && !string.IsNullOrEmpty(cell.RowKey) && cell.RowKey!.Equals(rowKey));
+        if (rowNum is not null) searchFunc = (cell => cell.TableDefinitionsId == tableID && cell.ColumnDefinitionsId == columnID && cell.RowNum == rowNum);
+        else searchFunc = (cell => cell.TableDefinitionsId == tableID && cell.ColumnDefinitionsId == columnID && !string.IsNullOrEmpty(cell.RowKey) && cell.RowKey!.Equals(rowKey));
 
         var cell = context.Cells.FirstOrDefault(searchFunc);
 

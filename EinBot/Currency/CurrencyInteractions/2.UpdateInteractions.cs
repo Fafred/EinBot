@@ -6,6 +6,7 @@ using EinBot.Currency.CurrencyInteractions.Exceptions;
 using EinBotDB;
 using EinBotDB.DataAccess;
 using EinBotDB.Models;
+using System.Text;
 
 public partial class CurrencyInteractions
 {
@@ -51,6 +52,7 @@ public partial class CurrencyInteractions
         // Attempt to set the value.
         try
         {
+            setValue = ReplaceNewLinesAndTabs(setValue);
             _dataAccess.SetCellValue(setValue, tableId: tableId, columnId: columnId, rowKey: key);
         }
         catch (InvalidDataException e)
@@ -125,6 +127,8 @@ public partial class CurrencyInteractions
 
             oldValue ??= "[NO VALUE]";
 
+            modifyValue = ReplaceNewLinesAndTabs(modifyValue);
+
             _dataAccess.ModifyCellValue(modifyValue, tableId: tableId, columnId: columnId, rowKey: key);
 
             newValue = _dataAccess.GetCellValue(tableId: tableId, columnId: columnId, rowKey: key);
@@ -191,5 +195,14 @@ public partial class CurrencyInteractions
         {
             if (string.IsNullOrEmpty(key)) throw new CollectionTypeIsPerKeyException();
         }
+    }
+
+    private string ReplaceNewLinesAndTabs(string data)
+    {
+        StringBuilder sb = new(data);
+
+        sb.Replace("\\n", "\n");
+        sb.Replace("\\t", "\t");
+        return sb.ToString();
     }
 }

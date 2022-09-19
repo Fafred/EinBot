@@ -66,6 +66,8 @@ public static class EmbedBuilderExtensions
         var rowKeys = (from row in eTable.Rows
                        select row.Key).ToList();
 
+        if (!rowKeys.Any()) return Array.Empty<Embed>();
+
         rowKeys.Sort();
 
         EmbedBuilder builder = new();
@@ -105,6 +107,8 @@ public static class EmbedBuilderExtensions
     public static Embed[] GetEinTableFields(EinTable eTable, IRole role)
     {
         var rowKeys = eTable.ColumnDataTypes.Keys.ToList();
+
+        if (!rowKeys.Any()) return Array.Empty<Embed>();
 
         rowKeys.Sort();
 

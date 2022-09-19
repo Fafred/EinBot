@@ -50,7 +50,9 @@ public partial class EinDataAccess
 
         ColumnDefinitionsModel columnDefinition = InternalGetColumn(context, columnName, columnId, tableId, roleId, tableName);
 
-        return context.ColumnDefinitions.Remove(columnDefinition).Entity;
+        columnDefinition = context.ColumnDefinitions.Remove(columnDefinition).Entity;
+        context.SaveChanges();
+        return columnDefinition;
     }
 
     /// <summary>
