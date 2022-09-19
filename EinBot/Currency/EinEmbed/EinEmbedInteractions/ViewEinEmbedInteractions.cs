@@ -132,7 +132,7 @@ public partial class ViewEinEmbedInteractions : InteractionModuleBase<SocketInte
             embedBuilder.AddEinEmbedPart(einRow, einEmbedPart);
         }
 
-        await RespondAsync(messageString, embed: embedBuilder.Build());
+        await RespondAsync(messageString, embed: embedBuilder.Build(), ephemeral: isEphemeral);
     }
 
     private async Task RespondSuccessAsync(string message, bool ephemeral = false)
