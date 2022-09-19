@@ -8,12 +8,14 @@ public enum DataTypesEnum
     UserId,
     GuildId,
     ChannelId,
+    /*
     ListInt,
     ListDecimal,
     ListText,
     ListUserId,
     ListGuildId,
     ListChannelId,
-    RoleId,
-    ListRoleId
+    */
+    RoleId = 13,
+    //ListRoleId
 }

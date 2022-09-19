@@ -243,7 +243,7 @@ public partial class CollectionInteractions
                 return;
             }
 
-            await RespondSuccessAsync($"The currency `{currencyName}` has been added to collection {role.Mention}.");
+            await RespondSuccessAsync($"The currency `{currencyName}` of type `{dataType}` has been added to collection {role.Mention}.");
             return;
         }
 

@@ -38,18 +38,19 @@ public class EinRow
 
             switch (ColumnDataTypes[columnName])
             {
-                case DataTypesEnum.ListInt:
+                /*case DataTypesEnum.ListInt:
                 case DataTypesEnum.ListDecimal:
                 case DataTypesEnum.ListText:
                 case DataTypesEnum.ListUserId:
                 case DataTypesEnum.ListGuildId:
                 case DataTypesEnum.ListChannelId:
+                case DataTypesEnum.ListRoleId:
                     if (!ListColumns.ContainsKey(columnName))
                     {
                         ListColumns.Add(columnName, new List<string?>());
                     }
                     ListColumns[columnName].Add(cell.Data);
-                    break;
+                    break;*/
                 default:
                     Columns[columnName] = cell.Data;
                     break;

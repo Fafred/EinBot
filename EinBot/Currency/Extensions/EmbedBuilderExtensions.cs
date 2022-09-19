@@ -2,6 +2,7 @@
 
 using Discord;
 using EinBotDB.DataAccess;
+using System.Collections.Immutable;
 using System.Text;
 
 /// <summary>
@@ -43,7 +44,10 @@ public static class EmbedBuilderExtensions
         eb.WithTitle(role.Name);
         eb.WithDescription($"{collectionTypeStr}\n\nCurrencies in this collection are displayed by the name of the currency, followed by the data type.\n\n:white_small_square::white_small_square::white_small_square::white_small_square::white_small_square::white_small_square::white_small_square::white_small_square::white_small_square::white_small_square::white_small_square::white_small_square::white_small_square::white_small_square::white_small_square::white_small_square::white_small_square::white_small_square::white_small_square::white_small_square::white_small_square::white_small_square:\n\n{role.Mention} has the following currencies:\n\n");
 
-        foreach (var key in eTable.ColumnDataTypes.Keys)
+        var rowKeys = eTable.ColumnDataTypes.Keys.ToList();
+        rowKeys.Sort();
+
+        foreach (var key in rowKeys)
         {
             eb.AddField(key, eTable.ColumnDataTypes[key], inline: true);
         }

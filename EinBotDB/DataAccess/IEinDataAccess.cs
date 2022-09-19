@@ -21,6 +21,24 @@ public interface IEinDataAccess
     int AddEmbedPart(EmbedPartsEnum embedPart, string Data01, string? Data02 = null, string? Data03 = null, int? tableId = null, ulong? roleId = null, string? tableName = null, int? sequence = null);
 
     /// <summary>
+    /// Adds or updates a "row" to the given table.  If no dataDict is supplied, or a column isn't present in the dataDict, the default value for the column will be an empty string.
+    /// </summary>
+    /// <param name="rowKey">The key of the row.  This must be unique key for the table.</param>
+    /// <param name="dataDict">Optional Dictionary<string, string>, where the key is the name of the column and the value is the data to put into it.</param>
+    /// <param name="tableId">NULL or the id of the table to add/update a row in.  If null, then either roleId or tableName cannot be null.</param>
+    /// <param name="roleId">NULL or the role id of the table to add/update a row in.  If null, then either tableId or tableName cannot be null.</param>
+    /// <param name="tableName">NULL or the name of the table to add/update a row in.  If null, then either roleId or tableId cannot be null.</param>
+    /// <exception cref="TableDoesNotExistException">If the given table does not exist.</exception>
+    /// <exception cref="InvalidKeyException">If the key is null.</exception>
+    /// <exception cref="KeyAlreadyPresentInTableException">If the key is already present in the table.</exception>"
+    /// <exception cref="InvalidDataException">If the data given in one of the values in the dataDict does not match the column data type.</exception>
+    /// <exception cref="InvalidKeyException"></exception>
+    public void AddOrUpdateRow(
+        string rowKey,
+        Dictionary<string, string>? dataDict = null,
+        int? tableId = null, ulong? roleId = null, string? tableName = null);
+
+    /// <summary>
     /// Adds a "row" to the given table.  If no dataDict is supplied, or a column isn't present in the dataDict, the default value for the column will be an empty string.
     /// </summary>
     /// <param name="rowKey">The key to give to the row.  This must be unique key for the table.</param>

@@ -57,6 +57,8 @@ public partial class EinTable
 
         var columnsList = ColumnDataTypes.Keys.ToList();
 
+        columnsList.Sort();
+
         sb.Append("ID,Key,");
 
         for (int i = 0; i < columnsList.Count; ++i)

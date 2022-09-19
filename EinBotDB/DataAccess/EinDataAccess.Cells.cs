@@ -12,6 +12,42 @@ public partial class EinDataAccess
      * 
      ****/
 
+    /// <summary>
+    /// Adds or updates a "row" to the given table.  If no dataDict is supplied, or a column isn't present in the dataDict, the default value for the column will be an empty string.
+    /// </summary>
+    /// <param name="rowKey">The key of the row.  This must be unique key for the table.</param>
+    /// <param name="dataDict">Optional Dictionary<string, string>, where the key is the name of the column and the value is the data to put into it.</param>
+    /// <param name="tableId">NULL or the id of the table to add/update a row in.  If null, then either roleId or tableName cannot be null.</param>
+    /// <param name="roleId">NULL or the role id of the table to add/update a row in.  If null, then either tableId or tableName cannot be null.</param>
+    /// <param name="tableName">NULL or the name of the table to add/update a row in.  If null, then either roleId or tableId cannot be null.</param>
+    /// <exception cref="TableDoesNotExistException">If the given table does not exist.</exception>
+    /// <exception cref="InvalidKeyException">If the key is null.</exception>
+    /// <exception cref="KeyAlreadyPresentInTableException">If the key is already present in the table.</exception>"
+    /// <exception cref="InvalidDataException">If the data given in one of the values in the dataDict does not match the column data type.</exception>
+    /// <exception cref="InvalidKeyException"></exception>
+    public void AddOrUpdateRow(
+        string rowKey,
+        Dictionary<string, string>? dataDict = null,
+        int? tableId = null, ulong? roleId = null, string? tableName = null)
+    {
+        if (string.IsNullOrEmpty(rowKey)) throw new InvalidKeyException("Key cannot be null.");
+
+        using var context = _factory.CreateDbContext();
+
+        var tableDefinition = InternalGetTable(context, tableId: tableId, roleId: roleId, tableName: tableName);
+        var tableID = tableDefinition.Id;
+
+        if (dataDict is null) dataDict = new();
+
+        if ((context.Cells.FirstOrDefault(cell => cell.TableDefinitionsId == tableID && !string.IsNullOrEmpty(cell.RowKey) && cell.RowKey.Equals(rowKey))) is not null)
+        {
+            UpdateRow(dataDict, tableId: tableID, rowKey: rowKey);
+        }
+        else
+        {
+            AddRow(rowKey, dataDict, tableId: tableID);
+        }
+    }
 
     /// <summary>
     /// Adds a "row" to the given table.  If no dataDict is supplied, or a column isn't present in the dataDict, the default value for the column will be an empty string.
@@ -217,20 +253,20 @@ public partial class EinDataAccess
         switch (dataType)
         {
             case DataTypesEnum.Text:
-            case DataTypesEnum.ListText:
+            //case DataTypesEnum.ListText:
                 return true;
             case DataTypesEnum.Int:
-            case DataTypesEnum.ListInt:
+            //case DataTypesEnum.ListInt:
                 return int.TryParse(data, out _);
             case DataTypesEnum.Decimal:
-            case DataTypesEnum.ListDecimal:
+            //case DataTypesEnum.ListDecimal:
                 return double.TryParse(data, out _);
             case DataTypesEnum.UserId:
-            case DataTypesEnum.ListUserId:
+            //case DataTypesEnum.ListUserId:
             case DataTypesEnum.GuildId:
-            case DataTypesEnum.ListGuildId:
+            //case DataTypesEnum.ListGuildId:
             case DataTypesEnum.ChannelId:
-            case DataTypesEnum.ListChannelId:
+            //case DataTypesEnum.ListChannelId:
                 return ulong.TryParse(data, out _);
             default: return false;
         }
@@ -277,7 +313,7 @@ public partial class EinDataAccess
         switch (dataType)
         {
             case DataTypesEnum.Int:
-            case DataTypesEnum.ListInt:
+            //case DataTypesEnum.ListInt:
                 int intVal;
                 int intModifier;
 
@@ -289,7 +325,7 @@ public partial class EinDataAccess
                 cellsModel.Data = (intVal + intModifier).ToString();
                 break;
             case DataTypesEnum.Decimal:
-            case DataTypesEnum.ListDecimal:
+            //case DataTypesEnum.ListDecimal:
                 double decimalVal;
                 double decimalModifier;
 
@@ -301,11 +337,13 @@ public partial class EinDataAccess
                 cellsModel.Data = (decimalVal + decimalModifier).ToString();
                 break;
             case DataTypesEnum.UserId:
-            case DataTypesEnum.ListUserId:
+            //case DataTypesEnum.ListUserId:
             case DataTypesEnum.GuildId:
-            case DataTypesEnum.ListGuildId:
+            //case DataTypesEnum.ListGuildId:
             case DataTypesEnum.ChannelId:
-            case DataTypesEnum.ListChannelId:
+            //case DataTypesEnum.ListChannelId:
+            case DataTypesEnum.RoleId:
+            //case DataTypesEnum.ListRoleId:
                 ulong ulongVal;
                 ulong ulongModifier;
 
@@ -420,7 +458,7 @@ public partial class EinDataAccess
             // Make sure the column from updateData exists, and that the data matches the data type of the actual column.
             var columnDefinition = columnsList.FirstOrDefault(column => column.Name.Equals(key));
 
-            if (columnDefinition is null) throw new ColumnDoesNotExistException($"No column with the name {key} in table id {tableID}.");
+            if (columnDefinition is null) continue; //throw new ColumnDoesNotExistException($"No column with the name {key} in table id {tableID}.");
 
             var dataType = (DataTypesEnum)columnDefinition.DataTypesId;
             var data = updateData[key];
