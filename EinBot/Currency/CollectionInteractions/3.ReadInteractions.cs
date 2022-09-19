@@ -29,9 +29,15 @@ public partial class CollectionInteractions
             return;
         }
 
-        Embed embed = new EmbedBuilder().DisplayEinTable(einTable, Role).Build();
+        List<Embed> embeds = new();
 
-        await RespondAsync(embed: embed);
+        await DeferAsync();
+
+        embeds.Add(new EmbedBuilder().DisplayEinTable(einTable, Role).Build());
+        embeds.AddRange(EinBot.Currency.Extensions.EmbedBuilderExtensions.GetEinTableFields(einTable, Role));
+        embeds.AddRange(EinBot.Currency.Extensions.EmbedBuilderExtensions.GetEinTableInstances(einTable, Role));
+
+        await FollowupAsync(embeds: embeds.ToArray());
     }
 
     /// <summary>

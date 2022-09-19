@@ -93,7 +93,7 @@ public partial class ViewEinEmbedInteractions : InteractionModuleBase<SocketInte
 
         List<EinEmbedPartsModel>? einEmbedPartsList;
 
-        // Now see if we havea ny EinEmbedParts associated with this table.
+        // Now see if we have any EinEmbedParts associated with this table.
         try
         {
             einEmbedPartsList = _dataAccess.GetEmbedParts(tableId: tableDefinition.Id);
