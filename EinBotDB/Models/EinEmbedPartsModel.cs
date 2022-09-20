@@ -2,7 +2,7 @@
 
 public class EinEmbedPartsModel
 {
-    public int Id { get; set; }
+    public int Id { get; init; }
 
     public int TableDefinitionsId { get; set; }
     public virtual TableDefinitionsModel TableDefinitions { get; set; }

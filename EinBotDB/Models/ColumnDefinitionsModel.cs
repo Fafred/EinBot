@@ -6,7 +6,7 @@ using System.ComponentModel.DataAnnotations;
 public class ColumnDefinitionsModel
 {
     [Key]
-    public int Id { get; set; }
+    public int Id { get; init; }
 
     public int TableDefinitionsId { get; set; }
     public virtual TableDefinitionsModel TableDefinitions { get; set; }

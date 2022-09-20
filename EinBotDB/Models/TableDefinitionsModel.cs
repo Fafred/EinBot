@@ -8,7 +8,7 @@ using System.ComponentModel.DataAnnotations;
 public class TableDefinitionsModel
 {
     [Key]
-    public int Id { get; set; }
+    public int Id { get; init; }
 
     [StringLength(100)]
     public string Name { get; set; }
