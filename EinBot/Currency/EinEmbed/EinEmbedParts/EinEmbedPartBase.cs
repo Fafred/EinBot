@@ -1,5 +1,7 @@
 ﻿namespace EinBot.Currency.EinEmbed;
 
+using System.Text;
+
 using Discord;
 using EinBotDB;
 using EinBotDB.DataAccess;
@@ -29,7 +31,7 @@ internal abstract class EinEmbedPartBase : IEinEmbedPart
     private string Replacer(string data)
     {
         if (string.IsNullOrEmpty(data)) return "";
-        if (!data.Contains('{')) return data;
+        if (!data.Contains('{') && !data.Contains("\\n") && !data.Contains("\\t")) return data;
 
         int count = 0;
 
@@ -50,22 +52,15 @@ internal abstract class EinEmbedPartBase : IEinEmbedPart
             if (!columnInfo.IsColumnList)
             {
                 var columnData = (columnInfo.Data is null ? "[NULL]" : (string)columnInfo.Data);
-                switch (columnInfo.DataType)
-                {
-                    case DataTypesEnum.UserId:
-                        replaceTerm = $"<@{columnData}>";
-                        break;
-                    case DataTypesEnum.ChannelId:
-                        replaceTerm = $"<#{columnData}>";
 
-                        break;
-                    case DataTypesEnum.RoleId:
-                        replaceTerm = $"<@&{columnData}>";
-                        break;
-                    default:
-                        replaceTerm = $"{columnData}";
-                        break;
-                }
+                replaceTerm = columnInfo.DataType switch
+                {
+                    DataTypesEnum.UserId => $"<@{columnData}>",
+                    DataTypesEnum.ChannelId => $"<#{columnData}>",
+                    DataTypesEnum.RoleId => $"<@&{columnData}>",
+                    _ => $"{columnData}",
+                };
+
 
                 var newData = data.Replace(searchTerm, replaceTerm);
                 if (!newData.Equals(data))
@@ -74,9 +69,9 @@ internal abstract class EinEmbedPartBase : IEinEmbedPart
                     data = newData;
                 }
             }
-
-            // TODO: handle lists.
         }
+
+        data = data.Replace("\\n", "\n").Replace("\\t", "\t");
 
         return data;
     }

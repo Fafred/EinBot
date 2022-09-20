@@ -48,9 +48,9 @@ public partial class EinDataAccess
         {
             TableDefinitionsId = (int)tableId,
             EmbedPartTypesId = (int)embedPart,
-            Data01 = ReplaceNewLinesAndTabs(Data01),
-            Data02 = ReplaceNewLinesAndTabs(Data02 ?? ""),
-            Data03 = ReplaceNewLinesAndTabs(Data03 ?? ""),
+            Data01 = Data01,
+            Data02 = Data02 ?? "",
+            Data03 = Data03 ?? "",
             Sequence = seq,
         });
 
@@ -170,13 +170,13 @@ public partial class EinDataAccess
         switch (dataSeq)
         {
             case 1:
-                embedPart.Data01 = ReplaceNewLinesAndTabs(data);
+                embedPart.Data01 = data;
                 break;
             case 2:
-                embedPart.Data02 = ReplaceNewLinesAndTabs(data);
+                embedPart.Data02 = data;
                 break;
             case 3:
-                embedPart.Data03 = ReplaceNewLinesAndTabs(data);
+                embedPart.Data03 = data;
                 break;
         }
 
@@ -233,14 +233,5 @@ public partial class EinDataAccess
         if (partsList.Count < 1) return null;
 
         return partsList;
-    }
-
-    private string ReplaceNewLinesAndTabs(string data)
-    {
-        StringBuilder sb = new(data);
-
-        sb.Replace("\\n", "\n");
-        sb.Replace("\\t", "\t");
-        return sb.ToString();
     }
 }
